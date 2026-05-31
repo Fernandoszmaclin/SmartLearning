@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SmartLearning{% endblock %}</title>
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="app is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
+  <div class="grain" aria-hidden="true"></div>
+  <a class="skip-link" href="#app-main">Pular para o conteúdo</a>
+
+  {% with un=request.resolver_match.url_name %}
+  <header class="app-bar glass">
+    <div class="app-bar-inner">
+      <a class="brand" href="{% url 'workspace' %}">
+        <svg class="mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+        <span class="brand-text">SmartLearning</span>
+      </a>
+
+      <nav class="app-nav" aria-label="Seções">
+        <a href="{% url 'dashboard' %}" {% if un == 'dashboard' %}class="is-active"{% endif %}>Minha área</a>
+        <a href="{% url 'workspace' %}" {% if un == 'workspace' or un == 'workspace_page' %}class="is-active"{% endif %}>Workspace</a>
+        <a href="{% url 'academic_notes' %}" {% if un == 'academic_notes' or un == 'academic_note_create' or un == 'academic_note_edit' %}class="is-active"{% endif %}>Estudos</a>
+        <a href="{% url 'academic_calendar' %}" {% if un == 'academic_calendar' %}class="is-active"{% endif %}>Calendário</a>
+        <a href="{% url 'course_list' %}" {% if un == 'course_list' or un == 'course_create' or un == 'subject_detail' or un == 'subject_edit' %}class="is-active"{% endif %}>Matérias</a>
+      </nav>
+
+      <div class="app-bar-right">
+        <button class="icon-btn" type="button" data-pomo-toggle title="Pomodoro" aria-label="Mostrar/ocultar Pomodoro">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6M19 5l1.5-1.5"/></svg>
+        </button>
+        <details class="user-menu">
+          <summary>
+            <span class="user-avatar">
+              {% if active_profile.photo %}
+                <img src="{{ active_profile.photo.url }}" alt="">
+              {% else %}
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              {% endif %}
+            </span>
+            {{ request.user.get_full_name|default:request.user.username }}
+          </summary>
+          <div class="user-pop">
+            <a href="{% url 'profile_edit' %}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              Editar perfil
+            </a>
+            <form method="post" action="{% url 'profile_toggle_theme' %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path|default:'/app/' }}">
+              <button type="submit">
+                {% if active_profile.theme == 'dark' %}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                  </svg>
+                {% else %}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3a6 6 0 0 0 9 7.3A9 9 0 1 1 12 3z"/>
+                  </svg>
+                {% endif %}
+                {% if active_profile.theme == 'dark' %}Modo claro{% else %}Modo escuro{% endif %}
+              </button>
+            </form>
+            <a href="{% url 'landing' %}">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>
+              </svg>
+              Página inicial
+            </a>
+            {% if request.user.is_staff %}
+              <a href="/admin/">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Admin
+              </a>
+            {% endif %}
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="danger">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+                </svg>
+                Sair
+              </button>
+            </form>
+          </div>
+        </details>
+      </div>
+    </div>
+  </header>
+  {% endwith %}
+
+  <main id="app-main" class="app-body {% block body_class %}padded{% endblock %}">
+    {% block app %}{% endblock %}
+  </main>
+
+  {% include "_pomodoro.html" %}
+
+  <script src="{% static 'js/reveal.js' %}"></script>
+  <script src="{% static 'js/pomodoro.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

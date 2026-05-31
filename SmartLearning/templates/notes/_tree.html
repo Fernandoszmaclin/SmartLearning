@@ -1,0 +1,23 @@
+{% load static %}
+<ul class="tree">
+  {% for page in pages %}
+    <li class="tree-item">
+      <div class="tree-row {% if current and page.id == current.id %}is-active{% endif %}">
+        <a class="tree-link" href="{% url 'workspace_page' page.id %}">
+          <span class="tree-icon">{{ page.icon }}</span>
+          <span class="tree-title">{{ page.display_title }}</span>
+        </a>
+        <button class="tree-add" type="button" title="Adicionar subpágina"
+                data-add-child="{{ page.id }}" aria-label="Adicionar subpágina">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      {% with children=page.children.all %}
+        {% if children %}
+          {% include "notes/_tree.html" with pages=children current=current %}
+        {% endif %}
+      {% endwith %}
+    </li>
+  {% endfor %}
+</ul>

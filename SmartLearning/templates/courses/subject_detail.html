@@ -1,0 +1,77 @@
+{% extends "app_base.html" %}
+{% block title %}{{ subject.name }} - SmartLearning{% endblock %}
+
+{% block app %}
+<div class="subject-detail reveal is-visible" style="--subject-color: {{ subject.color }};">
+  <a class="ac-back" href="{% url 'course_list' %}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    Voltar para matérias
+  </a>
+
+  <header class="subject-hero">
+    <div class="subject-title-row">
+      <span class="subject-dot"></span>
+      <div>
+        <h1>{{ subject.name }}</h1>
+        <p>
+          {% if subject.professor %}
+            Professor(a): {{ subject.professor }}
+          {% else %}
+            Sem professor(a) cadastrado
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="subject-hero-actions">
+      <a class="btn btn-secondary" href="{% url 'subject_edit' subject.id %}">Editar</a>
+      <a class="btn btn-primary" href="{% url 'academic_note_create' %}?category=estudo&subject={{ subject.id }}">Nova anotação</a>
+    </div>
+  </header>
+
+  <div class="subject-toolbar">
+    <span>Ordenar</span>
+    <a class="{% if sort == 'upcoming' %}is-active{% endif %}" href="?sort=upcoming">
+      Próximas provas/trabalhos
+    </a>
+    <a class="{% if sort == 'recent' %}is-active{% endif %}" href="?sort=recent">
+      Mais recentes
+    </a>
+  </div>
+
+  <div class="subject-note-groups">
+    {% for key, label, notes in groups %}
+      <section class="subject-note-section" id="{{ key }}">
+        <div class="subject-section-head">
+          <h2>{{ label }}</h2>
+          <a href="{% url 'academic_note_create' %}?category={{ key }}&subject={{ subject.id }}">Adicionar</a>
+        </div>
+
+        {% if notes %}
+          <div class="subject-note-list">
+            {% for note in notes %}
+              <article class="subject-note-card cat-{{ note.category }}">
+                <div>
+                  <h3>{{ note.title }}</h3>
+                  {% if note.content %}<p>{{ note.content|truncatewords:18 }}</p>{% endif %}
+                  <div class="subject-note-meta">
+                    {% if note.due_date %}<span>Entrega: {{ note.due_date|date:"d/m/Y" }}</span>{% endif %}
+                    {% if note.workspace_page %}
+                      <a href="{% url 'workspace_page' note.workspace_page.id %}">
+                        Workspace: {{ note.workspace_page.display_title }}
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+                <a class="subject-note-edit" href="{% url 'academic_note_edit' note.id %}">Editar</a>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="subject-empty">Nenhuma anotação de {{ label|lower }}.</p>
+        {% endif %}
+      </section>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} - SmartLearning{% endblock %}
+
+{% block content %}
+<section class="container section legal-page">
+  <h1>{{ titulo }}</h1>
+  <p>Esta é uma página de exemplo do projeto de estudo SmartLearning. {{ titulo }}
+     descreveria aqui como tratamos seus dados e quais regras se aplicam ao uso do serviço.</p>
+  <p>O SmartLearning guarda apenas o necessário para o funcionamento (sua conta, suas
+     anotações, matérias e sessões de foco) e nada é compartilhado com terceiros.</p>
+  <p><a href="{% url 'landing' %}">&larr; Voltar para o início</a></p>
+</section>
+{% endblock %}

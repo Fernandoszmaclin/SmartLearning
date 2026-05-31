@@ -1,0 +1,121 @@
+{% extends "app_base.html" %}
+{% load ac_extras static %}
+{% block title %}Anotações - SmartLearning{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/academics.css' %}">{% endblock %}
+
+{% block app %}
+<div class="ac-page reveal is-visible">
+
+  <div class="app-head">
+    <div>
+      <h1>Anotações</h1>
+      <p class="lead">Organize estudos, trabalhos e provas por matéria.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'academic_note_create' %}?category={{ category }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nova anotação
+    </a>
+  </div>
+
+  <div class="ac-tabs" role="tablist">
+    {% for value, label in categories %}
+      <a role="tab" aria-selected="{% if category == value %}true{% else %}false{% endif %}"
+         class="ac-tab cat-{{ value }} {% if category == value %}is-active{% endif %}"
+         href="?category={{ value }}{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if show_all %}&all=1{% endif %}">
+        {{ label }}<span class="ac-tab-count">{{ counts|get:value|default:0 }}</span>
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="ac-filters">
+    <div class="ac-chip-row">
+      <a class="ac-chip {% if not selected_subject %}is-active{% endif %}"
+         href="?category={{ category }}{% if show_all %}&all=1{% endif %}">Todas as matérias</a>
+      {% for s in subjects %}
+        <a class="ac-chip {% if selected_subject == s.id|stringformat:'s' %}is-active{% endif %}"
+           href="?category={{ category }}&subject={{ s.id }}{% if show_all %}&all=1{% endif %}">
+          <span class="dot" style="background: {{ s.color }};"></span>{{ s.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if is_task_cat and show_all %}
+    <div class="ac-mode-bar">
+      <span><strong>Todas</strong> · incluindo terminadas</span>
+      <a href="?category={{ category }}{% if selected_subject %}&subject={{ selected_subject }}{% endif %}">Ocultar terminadas</a>
+    </div>
+  {% endif %}
+
+  {% if notes %}
+    <div class="ac-grid" data-stagger="60">
+      {% for note in notes %}
+        <article class="card ac-card reveal {% if note.is_task and note.is_done %}is-done{% endif %}">
+          <div class="ac-card-top">
+            <span class="ac-badge cat-{{ note.category }}">{{ note.get_category_display }}</span>
+            {% if note.subject %}
+              <span class="ac-tag"><span class="dot" style="background: {{ note.subject.color }};"></span>{{ note.subject.name }}</span>
+            {% endif %}
+          </div>
+
+          <h3 class="ac-card-title">{{ note.title }}</h3>
+
+          {% if note.is_task and not note.is_done and note.due_date and note.due_date < today %}
+            <p class="ac-pendente" role="status">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+              </svg>
+              Pendente <span>· venceu em {{ note.due_date|date:"d/m/Y" }}</span>
+            </p>
+          {% endif %}
+
+          {% if note.content %}<p class="ac-card-text">{{ note.content|truncatewords:24 }}</p>{% endif %}
+
+          {% if note.is_task %}
+            <ul class="ac-meta">
+              {% if note.due_date %}
+                <li><strong>Entrega:</strong> {{ note.due_date|date:"d/m/Y" }}</li>
+              {% endif %}
+              {% if note.professor %}<li><strong>Prof.:</strong> {{ note.professor }}</li>{% endif %}
+              {% if note.workspace_page %}
+                <li>
+                  <strong>Workspace:</strong>
+                  <a href="{% url 'workspace_page' note.workspace_page.id %}">{{ note.workspace_page.display_title }}</a>
+                </li>
+              {% endif %}
+            </ul>
+            <form method="post" action="{% url 'academic_note_toggle' note.id %}" class="ac-status-form">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="ac-status {% if note.is_done %}done{% else %}pending{% endif %}">
+                {% if note.is_done %}✓ Terminado{% else %}● Não terminado{% endif %}
+              </button>
+            </form>
+          {% endif %}
+
+          <footer class="ac-card-foot">
+            <span class="ac-created">Criado em {{ note.created_at|date:"d/m" }}</span>
+            <span class="ac-actions">
+              <a href="{% url 'academic_note_edit' note.id %}">Editar</a>
+              <form method="post" action="{% url 'academic_note_delete' note.id %}"
+                    onsubmit="return confirm('Apagar esta anotação?');">
+                {% csrf_token %}
+                <button type="submit" class="link-danger">Apagar</button>
+              </form>
+            </span>
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3>Nenhuma anotação aqui ainda</h3>
+      <p>Crie sua primeira anotação de <strong>{{ category }}</strong>.</p>
+      <a class="btn btn-primary" href="{% url 'academic_note_create' %}?category={{ category }}">Nova anotação</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

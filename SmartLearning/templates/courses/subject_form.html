@@ -1,0 +1,39 @@
+{% extends "app_base.html" %}
+{% block title %}Editar matéria - SmartLearning{% endblock %}
+
+{% block app %}
+<section class="form-narrow reveal is-visible">
+  <a class="ac-back" href="{% url 'subject_detail' subject.id %}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    Voltar para matéria
+  </a>
+  <h1>Editar matéria</h1>
+
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+
+    <label class="field">
+      <span>Matéria</span>
+      {{ form.name }}
+      {% for e in form.name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+    </label>
+    <label class="field">
+      <span>Professor(a)</span>
+      {{ form.professor }}
+      {% for e in form.professor.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+    </label>
+    <label class="field">
+      <span>Cor</span>
+      {{ form.color }}
+      {% for e in form.color.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+    </label>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="btn btn-primary">Salvar matéria</button>
+      <a class="btn btn-secondary" href="{% url 'subject_detail' subject.id %}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "app_base.html" %}
+
+{% block title %}{{ display_name }} - SmartLearning{% endblock %}
+
+{% block app %}
+<div class="dash">
+  <header class="app-head">
+    <div>
+      <h1>Olá, {{ display_name }}</h1>
+      <p class="lead">Seu panorama de estudos.</p>
+    </div>
+    <a class="btn btn-secondary" href="{% url 'academic_note_create' %}">Nova anotação</a>
+  </header>
+
+  {% if overdue_count %}
+  <div class="dash-alert" role="alert">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <path d="M12 9v4M12 17h.01"/>
+    </svg>
+    <div>
+      <strong>{{ overdue_count }} atividade{{ overdue_count|pluralize }} atrasada{{ overdue_count|pluralize }}</strong>
+      <p>Você passou da data de entrega. Resolva ou marque como terminado.</p>
+    </div>
+  </div>
+  <ul class="dash-overdue">
+    {% for t in overdue %}
+    <li class="cat-{{ t.category }}">
+      <a href="{% url 'academic_note_edit' t.pk %}">{{ t.title }}</a>
+      <span>{{ t.get_category_display }}{% if t.subject %} · {{ t.subject.name }}{% endif %} · venceu em {{ t.due_date|date:"d/m/Y" }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <section class="dash-stats" aria-label="Resumo de anotações">
+    <a class="stat-card stat-estudo" href="{% url 'academic_notes' %}?category=estudo&all=1">
+      <span class="stat-label">Estudo</span>
+      <strong class="stat-num">{{ counts.estudo }}</strong>
+      <span class="stat-sub">ver todas <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="stat-card stat-prova" href="{% url 'academic_notes' %}?category=prova&all=1">
+      <span class="stat-label">Provas</span>
+      <strong class="stat-num">{{ counts.prova }}</strong>
+      <span class="stat-sub">ver todas <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="stat-card stat-trabalho" href="{% url 'academic_notes' %}?category=trabalho&all=1">
+      <span class="stat-label">Trabalhos</span>
+      <strong class="stat-num">{{ counts.trabalho }}</strong>
+      <span class="stat-sub">ver todas <span aria-hidden="true">→</span></span>
+    </a>
+    <article class="stat-card">
+      <span class="stat-label">Total</span>
+      <strong class="stat-num">{{ total_notes }}</strong>
+      <span class="stat-sub">no total</span>
+    </article>
+  </section>
+
+  <section class="card heatmap-card">
+    <div class="dash-card-head">
+      <h2>Anotações de estudo</h2>
+      <span class="muted-text">Últimos 6 meses · {{ heat_total }} no período</span>
+    </div>
+    <div class="heatmap-scroll">
+      <div class="heatmap" role="img"
+           aria-label="Mapa de calor de anotações de estudo por dia: {{ heat_total }} no período de {{ heat_weeks_n }} semanas.">
+        <div class="heatmap-months" style="--weeks: {{ heat_weeks_n }};">
+          {% for mo in heat_months %}
+          <span class="heatmap-month" style="grid-column: span {{ mo.span }};">{% if mo.span > 1 %}{{ mo.label }}{% endif %}</span>
+          {% endfor %}
+        </div>
+        <div class="heatmap-body">
+          <div class="heatmap-days" aria-hidden="true">
+            {% for lbl in heat_day_labels %}<span>{{ lbl }}</span>{% endfor %}
+          </div>
+          <div class="heatmap-grid" style="--weeks: {{ heat_weeks_n }};">
+            {% for col in heat_weeks %}{% for cell in col %}{% if cell.level == -1 %}<span class="heat-cell is-future" aria-hidden="true"></span>{% else %}<span class="heat-cell lvl-{{ cell.level }}" title="{{ cell.count }} anotaç{{ cell.count|pluralize:'ão,ões' }} em {{ cell.date|date:'d/m/Y' }}"></span>{% endif %}{% endfor %}{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="heatmap-legend" aria-hidden="true">
+      <span>Menos</span>
+      <span class="heat-cell lvl-0"></span>
+      <span class="heat-cell lvl-1"></span>
+      <span class="heat-cell lvl-2"></span>
+      <span class="heat-cell lvl-3"></span>
+      <span class="heat-cell lvl-4"></span>
+      <span>Mais</span>
+    </div>
+  </section>
+
+  <section class="card dash-week">
+    <div class="dash-card-head">
+      <h2>Esta semana</h2>
+      <span class="muted-text">{{ week_start|date:"d/m" }} a {{ week_end|date:"d/m" }}</span>
+    </div>
+    {% if week_tasks %}
+    <ul class="week-list">
+      {% for t in week_tasks %}
+      <li class="cat-{{ t.category }}">
+        <div>
+          <a href="{% url 'academic_note_edit' t.pk %}">{{ t.title }}</a>
+          <span>{{ t.get_category_display }}{% if t.subject %} · {{ t.subject.name }}{% endif %}</span>
+        </div>
+        <time datetime="{{ t.due_date|date:'Y-m-d' }}">{{ t.due_date|date:"D, d/m" }}</time>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="dash-empty">Nada com prazo nesta semana. Respira.</p>
+    {% endif %}
+  </section>
+
+  <section class="dash-subjects">
+    <div class="dash-section-head">
+      <h2>Minhas matérias</h2>
+      <a href="{% url 'course_list' %}">Ver todas</a>
+    </div>
+    {% if subjects %}
+    <div class="subject-grid">
+      {% for s in subjects %}
+      <article class="card subject-card" style="--subject-color: {{ s.color }};">
+        <a class="subject-card-top subject-main-link" href="{% url 'subject_detail' s.id %}">
+          <span class="subject-dot"></span>
+          <div>
+            <h3>{{ s.name }}</h3>
+            <p>{{ s.estudo_count }} estudo · {{ s.task_count }} tarefa{{ s.task_count|pluralize }}</p>
+          </div>
+        </a>
+        {% if s.estudo_notes %}
+        <ul class="subject-note-mini">
+          {% for n in s.estudo_notes %}
+          <li><a href="{% url 'academic_note_edit' n.pk %}">{{ n.title }}</a></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="dash-empty">Sem anotações de estudo ainda.</p>
+        {% endif %}
+        <a class="subject-more" href="{% url 'academic_notes' %}?subject={{ s.id }}">Ver anotações</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <h3>Nenhuma matéria ainda</h3>
+      <p>Crie matérias para organizar seus estudos por cadeira.</p>
+      <a class="btn btn-primary" href="{% url 'course_list' %}">Adicionar matéria</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
