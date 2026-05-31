@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}SmartLearning: estude organizado, no seu ritmo{% endblock %}
+
+{% block content %}
+<section class="section ambient hero-section">
+  <div class="container hero hero-home" data-stagger="90">
+    <div class="hero-main">
+      <div class="hero-copy">
+        <span class="eyebrow reveal">Sua área de estudos</span>
+        <h1 class="reveal reveal-soft">Anotações organizadas. Foco de verdade.</h1>
+        <p class="lead reveal">
+          Menos abas abertas, menos distração. Um espaço calmo para escrever,
+          organizar e focar de verdade.
+        </p>
+        <div class="hero-actions reveal">
+          {% if user.is_authenticated %}
+            <a class="btn btn-primary btn-lg" href="{% url 'workspace' %}">Abrir minha área<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+          {% else %}
+            <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Começar de graça<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+            <a class="btn btn-secondary btn-lg" href="{% url 'login' %}">Entrar</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="film-bezel reveal">
+        <div class="hero-film" data-home-film aria-label="Prévia animada do SmartLearning">
+        <div class="film-top">
+          <span></span><span></span><span></span>
+          <strong>Plano de estudo</strong>
+        </div>
+        <div class="film-stage">
+          <div class="film-card film-note">
+            <small>Anotações</small>
+            <strong>Revisar cálculo</strong>
+            <span></span><span></span><span class="short"></span>
+          </div>
+          <div class="film-card film-task">
+            <small>Hoje</small>
+            <div class="check-row"><i></i><span>Resumo pronto</span></div>
+            <div class="check-row"><i></i><span>Lista de exercícios</span></div>
+            <div class="check-row muted"><i></i><span>Simulado</span></div>
+          </div>
+          <div class="film-focus">
+            <b>25:00</b>
+            <span>Pomodoro</span>
+          </div>
+          <div class="film-calendar" aria-hidden="true">
+            <span></span><span></span><span class="hot"></span><span></span>
+            <span></span><span class="accent"></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div class="benefits" data-stagger="80">
+      <article class="benefit benefit-feature reveal">
+        <span class="benefit-icon" aria-hidden="true">
+          <!-- Lucide: target -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+        </span>
+        <h3>Anotações em blocos</h3>
+        <p>Escreva em blocos flexíveis: títulos, tarefas, listas, citações e código. Aperte "/" para comandos.</p>
+      </article>
+      <article class="benefit reveal">
+        <span class="benefit-icon" aria-hidden="true">
+          <!-- Lucide: trending-up -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 7 13.5 15.5l-5-5L2 17"/><path d="M16 7h6v6"/>
+          </svg>
+        </span>
+        <h3>Organize suas páginas</h3>
+        <p>Organize tudo em páginas dentro de páginas. Favorite as que você mais usa.</p>
+      </article>
+      <article class="benefit reveal">
+        <span class="benefit-icon" aria-hidden="true">
+          <!-- Lucide: award -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/>
+          </svg>
+        </span>
+        <h3>Pomodoro embutido</h3>
+        <p>Um timer de foco que alterna trabalho e pausas, registra suas sessões e acompanha seu foco do dia.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section scrollytelling" aria-label="Como funciona o SmartLearning">
+  <div class="container scrolly-head reveal reveal-soft">
+    <h2>Como funciona, na prática.</h2>
+    <p>Quatro ferramentas que trabalham juntas no seu ritmo de estudo.</p>
+  </div>
+
+  <div class="container scrolly">
+    <div class="scrolly-sticky">
+      <div class="scrolly-stage" aria-hidden="true">
+        <div class="scrolly-screen is-active" data-screen="0">
+          <div class="sc-card sc-note">
+            <small>Anotações</small>
+            <strong>Resumo de Cálculo</strong>
+            <span class="sc-line"></span><span class="sc-line"></span><span class="sc-line short"></span>
+            <span class="sc-slash">Aperte / para comandos</span>
+          </div>
+        </div>
+        <div class="scrolly-screen" data-screen="1">
+          <div class="sc-subjects">
+            <div class="sc-subject" style="--c:#0D9488"><span></span>Cálculo I</div>
+            <div class="sc-subject" style="--c:#EA580C"><span></span>Física</div>
+            <div class="sc-subject" style="--c:#7C3AED"><span></span>História</div>
+            <div class="sc-subject" style="--c:#2DD4BF"><span></span>Inglês</div>
+          </div>
+        </div>
+        <div class="scrolly-screen" data-screen="2">
+          <div class="sc-timer">
+            <b>25:00</b>
+            <span>Foco</span>
+          </div>
+        </div>
+        <div class="scrolly-screen" data-screen="3">
+          <div class="sc-calendar">
+            <span></span><span></span><span class="hot"></span><span></span><span></span>
+            <span></span><span class="accent"></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span class="hot"></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrolly-steps">
+      <article class="scrolly-step is-active" data-step="0">
+        <h3>Escreva em blocos</h3>
+        <p>Títulos, listas, tarefas, citações e código. Aperte "/" e monte cada página do seu jeito.</p>
+      </article>
+      <article class="scrolly-step" data-step="1">
+        <h3>Organize por matéria</h3>
+        <p>Cada cadeira com sua cor, páginas dentro de páginas e as favoritas sempre à mão.</p>
+      </article>
+      <article class="scrolly-step" data-step="2">
+        <h3>Foque com Pomodoro</h3>
+        <p>Um timer que alterna foco e pausa, registra suas sessões e mostra seu progresso do dia.</p>
+      </article>
+      <article class="scrolly-step" data-step="3">
+        <h3>Acompanhe no calendário</h3>
+        <p>Provas e trabalhos com data aparecem no mês. Nenhum prazo passa despercebido.</p>
+      </article>
+    </div>
+  </div>
+
+  <div class="container scrolly-cta reveal">
+    {% if user.is_authenticated %}
+      <a class="btn btn-primary btn-lg" href="{% url 'workspace' %}">Abrir minha área<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+    {% else %}
+      <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Começar de graça<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

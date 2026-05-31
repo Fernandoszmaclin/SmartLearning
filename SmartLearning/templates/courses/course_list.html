@@ -1,0 +1,141 @@
+{% extends "app_base.html" %}
+{% block title %}Matérias - SmartLearning{% endblock %}
+
+{% block app %}
+<div class="reveal is-visible">
+  <div class="app-head">
+    <div>
+      <h1>Matérias</h1>
+      <p class="lead">Cadastre matérias, professor(a) e veja anotações por categoria.</p>
+    </div>
+  </div>
+
+  <form class="subject-create-panel" method="post" action="{% url 'academic_subject_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div>
+      <span class="panel-kicker">Nova matéria</span>
+      <h2>Adicionar matéria</h2>
+    </div>
+    <div class="subject-create-fields">
+      {{ subject_form.name }}
+      {{ subject_form.professor }}
+      <details class="color-pop" title="Cor da matéria">
+        <summary aria-label="Escolher cor da matéria">
+          <span class="color-current-dot"></span>
+          <svg class="color-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="color-pop-panel">
+          <div class="color-grid"></div>
+          <label class="color-custom-row">
+            <span>Outra cor</span>
+            {{ subject_form.color }}
+          </label>
+        </div>
+      </details>
+      <button class="btn btn-primary" type="submit">Add matéria</button>
+    </div>
+  </form>
+
+  {% if subjects %}
+    <div class="subject-grid" data-stagger="60">
+      {% for subject in subjects %}
+        <article class="card subject-card reveal" style="--subject-color: {{ subject.color }};">
+          <a class="subject-card-top subject-main-link" href="{% url 'subject_detail' subject.id %}">
+            <span class="subject-dot"></span>
+            <div>
+              <h3>{{ subject.name }}</h3>
+              <p>
+                {% if subject.professor %}
+                  Professor(a): {{ subject.professor }}
+                {% else %}
+                  Sem professor(a) cadastrado
+                {% endif %}
+              </p>
+            </div>
+          </a>
+
+          <div class="subject-counts" aria-label="Anotações por categoria">
+            <a href="{% url 'subject_detail' subject.id %}#estudo">
+              <span>Estudo</span><strong>{{ subject.estudo_count }}</strong>
+            </a>
+            <a href="{% url 'subject_detail' subject.id %}#prova">
+              <span>Prova</span><strong>{{ subject.prova_count }}</strong>
+            </a>
+            <a href="{% url 'subject_detail' subject.id %}#trabalho">
+              <span>Trabalho</span><strong>{{ subject.trabalho_count }}</strong>
+            </a>
+          </div>
+
+          <footer class="subject-actions">
+            <a href="{% url 'subject_edit' subject.id %}">Editar</a>
+            <form method="post" action="{% url 'course_delete' subject.id %}"
+                  onsubmit="return confirm('Remover esta matéria? As anotações ficam sem matéria.');">
+              {% csrf_token %}
+              <button type="submit" class="link-danger">Remover</button>
+            </form>
+          </footer>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3>Nenhuma matéria ainda</h3>
+      <p>Adicione uma matéria para organizar estudos, provas e trabalhos.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var form = document.querySelector(".subject-create-panel");
+    if (!form) return;
+
+    var color = form.querySelector("input[type='color']");
+    var pop = form.querySelector(".color-pop");
+    var grid = form.querySelector(".color-grid");
+    var dot = form.querySelector(".color-current-dot");
+    if (!color || !pop || !grid || !dot) return;
+
+    var palette = [
+      "#0D9488", "#EA580C", "#7C3AED", "#2563EB",
+      "#DB2777", "#059669", "#D97706", "#4F46E5",
+      "#0891B2", "#65A30D", "#BE123C", "#9333EA"
+    ];
+
+    function setColor(hex) {
+      color.value = hex;
+      dot.style.background = hex;
+      Array.prototype.forEach.call(grid.children, function (b) {
+        b.classList.toggle("is-selected", (b.dataset.color || "").toLowerCase() === hex.toLowerCase());
+      });
+    }
+
+    palette.forEach(function (hex) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "color-swatch";
+      b.dataset.color = hex;
+      b.style.setProperty("--c", hex);
+      b.setAttribute("aria-label", "Cor " + hex);
+      b.addEventListener("click", function () {
+        setColor(hex);
+        pop.removeAttribute("open");
+      });
+      grid.appendChild(b);
+    });
+
+    color.addEventListener("input", function () { setColor(color.value); });
+
+    // cor inicial aleatória da paleta (sempre há uma cor escolhida)
+    setColor(palette[Math.floor(Math.random() * palette.length)]);
+
+    // fecha o popover ao clicar fora
+    document.addEventListener("click", function (e) {
+      if (pop.hasAttribute("open") && !pop.contains(e.target)) pop.removeAttribute("open");
+    });
+  })();
+</script>
+{% endblock %}

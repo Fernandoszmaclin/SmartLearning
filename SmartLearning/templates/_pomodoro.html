@@ -1,0 +1,45 @@
+{% load static %}
+<div class="pomodoro {% if not pomodoro_open %}hidden collapsed{% endif %}" id="pomodoro"
+     data-log-url="{% url 'pomodoro_log' %}"
+     data-stats-url="{% url 'pomodoro_stats' %}"
+     data-page-id="{{ pomodoro_page_id|default:'' }}">
+  <div class="pomo-head">
+    <span class="pomo-mode" id="pomo-mode">Foco</span>
+    <button class="icon-btn" id="pomo-collapse" type="button" title="Recolher" aria-label="Recolher timer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+
+  <div class="pomo-body">
+    <div class="pomo-time" id="pomo-time" role="timer" aria-live="polite">25:00</div>
+
+    <input class="input pomo-task" id="pomo-task" type="text"
+           placeholder="No que você está focando?" maxlength="200">
+
+    <div class="pomo-controls">
+      <button class="btn btn-primary" id="pomo-toggle" type="button">Começar</button>
+      <button class="icon-btn" id="pomo-reset" type="button" title="Reiniciar" aria-label="Reiniciar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+      <button class="icon-btn" id="pomo-skip" type="button" title="Pular" aria-label="Pular">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m5 4 10 8-10 8zM19 5v14"/></svg>
+      </button>
+    </div>
+
+    <div class="pomo-settings">
+      <label>Foco <input type="number" id="set-work" min="1" max="120" value="25"></label>
+      <label>Curta <input type="number" id="set-short" min="1" max="60" value="5"></label>
+      <label>Longa <input type="number" id="set-long" min="1" max="60" value="15"></label>
+    </div>
+
+    <div class="pomo-stats">
+      <span><strong id="stat-sessions">{{ focus_sessions_today|default:0 }}</strong> sessões hoje</span>
+      <span><strong id="stat-minutes">{{ focus_minutes_today|default:0 }}</strong> min focados</span>
+    </div>
+  </div>
+</div>

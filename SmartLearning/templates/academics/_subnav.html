@@ -1,0 +1,17 @@
+{% with url_name=request.resolver_match.url_name %}
+<nav class="ac-subnav" aria-label="Navegação acadêmica">
+  <div class="container ac-subnav-inner">
+    <div class="ac-subnav-links">
+      <a href="{% url 'academic_notes' %}"
+         class="{% if url_name == 'academic_notes' %}is-active{% endif %}">Anotações</a>
+      <a href="{% url 'academic_calendar' %}"
+         class="{% if url_name == 'academic_calendar' %}is-active{% endif %}">Calendário</a>
+    </div>
+    <a class="btn btn-primary" href="{% url 'academic_note_create' %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nova anotação
+    </a>
+  </div>
+</nav>
+{% endwith %}

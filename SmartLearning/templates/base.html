@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block meta_description %}SmartLearning: sua área de estudos com anotações organizadas e foco no Pomodoro.{% endblock %}">
+  <title>{% block title %}SmartLearning{% endblock %}</title>
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <meta property="og:title" content="SmartLearning: sua área de estudos">
+  <meta property="og:description" content="Anotações no estilo Notion, calendário acadêmico e Pomodoro num lugar só.">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
+  <div class="grain" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="{% url 'landing' %}">
+        <!-- Lucide: graduation-cap -->
+        <svg class="mark" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+        SmartLearning
+      </a>
+      <nav class="nav" aria-label="Primary">
+        {% if user.is_authenticated %}
+          <a class="btn btn-secondary" href="{% url 'dashboard' %}">Minha área</a>
+          <details class="user-menu">
+            <summary>
+              <span class="user-avatar">
+                {% if active_profile.photo %}
+                  <img src="{{ active_profile.photo.url }}" alt="">
+                {% else %}
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                {% endif %}
+              </span>
+              {{ request.user.get_full_name|default:request.user.username }}
+            </summary>
+            <div class="user-pop">
+              <a href="{% url 'profile_edit' %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                Editar perfil
+              </a>
+              <form method="post" action="{% url 'profile_toggle_theme' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path|default:'/' }}">
+                <button type="submit">
+                  {% if active_profile.theme == 'dark' %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                    </svg>
+                  {% else %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 3a6 6 0 0 0 9 7.3A9 9 0 1 1 12 3z"/>
+                    </svg>
+                  {% endif %}
+                  {% if active_profile.theme == 'dark' %}Modo claro{% else %}Modo escuro{% endif %}
+                </button>
+              </form>
+              {% if request.user.is_staff %}
+                <a href="/admin/">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  Admin
+                </a>
+              {% endif %}
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="danger">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+                  </svg>
+                  Sair
+                </button>
+              </form>
+            </div>
+          </details>
+        {% else %}
+          <a class="nav-secondary" href="{% url 'login' %}">Entrar</a>
+          <a class="btn btn-primary" href="{% url 'signup' %}">Começar</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>&copy; {% now "Y" %} SmartLearning. Aprenda algo hoje.</span>
+      <nav class="footer-links" aria-label="Rodapé">
+        <a href="{% url 'privacidade' %}">Privacidade</a>
+        <a href="{% url 'termos' %}">Termos</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="{% static 'js/reveal.js' %}"></script>
+</body>
+</html>

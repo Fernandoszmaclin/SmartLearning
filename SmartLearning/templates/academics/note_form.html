@@ -1,0 +1,117 @@
+{% extends "app_base.html" %}
+{% load static %}
+{% block title %}{% if mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %} - SmartLearning{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/academics.css' %}">{% endblock %}
+
+{% block app %}
+<section class="ac-form-wrap reveal is-visible">
+  <a class="ac-back" href="{% url 'academic_notes' %}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    Voltar para anotações
+  </a>
+  <h1 class="ac-form-title">{% if mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}</h1>
+
+  <form method="post" class="ac-form" id="note-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="ac-form-row">
+      <label class="field">
+        <span>Categoria</span>
+        {{ form.category }}
+        {% for e in form.category.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+      </label>
+      <label class="field">
+        <span>Matéria</span>
+        {{ form.subject }}
+        <small class="help-text">Crie matérias na tela de anotações.</small>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Título</span>
+      {{ form.title }}
+      {% for e in form.title.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+    </label>
+
+    <label class="field">
+      <span>Página do workspace</span>
+      {{ form.workspace_page }}
+      <small class="help-text">Vincule esta anotação a uma página ou subpágina do Workspace.</small>
+    </label>
+
+    <div id="task-fields">
+      <div class="ac-form-row">
+        {% if mode == 'edit' %}
+          <label class="field">
+            <span>Professor(a)</span>
+            {{ form.professor }}
+            <small class="help-text">Você pode ajustar o professor(a) nesta edição.</small>
+          </label>
+        {% else %}
+          <input type="hidden" name="{{ form.professor.name }}" id="id_professor" value="">
+          <div class="professor-preview" id="inherited-professor" aria-live="polite">
+            <span>Professor(a)</span>
+            <strong>Selecione uma matéria para preencher automaticamente.</strong>
+          </div>
+        {% endif %}
+        <label class="field">
+          <span>Data de entrega / realização</span>
+          {{ form.due_date }}
+          {% for e in form.due_date.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
+      </div>
+      {% if mode == 'edit' %}
+        <label class="field-check">
+          {{ form.is_done }}
+          <span>Marcar como <strong>terminado</strong></span>
+        </label>
+      {% endif %}
+    </div>
+
+    <label class="field">
+      <span>Conteúdo</span>
+      {{ form.content }}
+    </label>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Salvar{% else %}Criar anotação{% endif %}</button>
+      <a class="btn btn-secondary" href="{% url 'academic_notes' %}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{{ subject_professors|json_script:"subject-professors" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var cat = document.getElementById("id_category");
+    var subject = document.getElementById("id_subject");
+    var professor = document.getElementById("id_professor");
+    var taskFields = document.getElementById("task-fields");
+    var inherited = document.getElementById("inherited-professor");
+    var professorMapEl = document.getElementById("subject-professors");
+    var professorMap = professorMapEl ? JSON.parse(professorMapEl.textContent) : {};
+
+    function sync() {
+      var isTask = cat.value === "trabalho" || cat.value === "prova";
+      taskFields.style.display = isTask ? "" : "none";
+
+      if (!isTask || !subject || !professor || !inherited) return;
+
+      var name = professorMap[subject.value] || "";
+      professor.value = name;
+      inherited.innerHTML = name
+        ? "<span>Professor(a)</span><strong>" + name + "</strong>"
+        : "<span>Professor(a)</span><strong>Esta matéria não tem professor(a) cadastrado.</strong>";
+    }
+
+    cat.addEventListener("change", sync);
+    if (subject) subject.addEventListener("change", sync);
+    sync();
+  })();
+</script>
+{% endblock %}

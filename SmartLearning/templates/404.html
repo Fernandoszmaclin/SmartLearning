@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Página não encontrada - SmartLearning{% endblock %}
+
+{% block content %}
+<section class="container section notfound ambient">
+  <p class="code">404</p>
+  <h1>Essa página não existe</h1>
+  <p class="lead" style="margin-inline:auto;max-width:44ch;">
+    O link pode estar quebrado ou a página foi movida. Vamos te levar de volta.
+  </p>
+  <div class="hero-actions" style="justify-content:center;">
+    <a class="btn btn-primary" href="{% url 'landing' %}">Voltar ao início</a>
+    <a class="btn btn-secondary" href="{% url 'workspace' %}">Ir para o workspace</a>
+  </div>
+</section>
+{% endblock %}

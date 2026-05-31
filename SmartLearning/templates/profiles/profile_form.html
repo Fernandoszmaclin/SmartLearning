@@ -1,0 +1,74 @@
+{% extends "app_base.html" %}
+{% block title %}Editar perfil - SmartLearning{% endblock %}
+
+{% block app %}
+<section class="profile-page reveal is-visible">
+  <div class="profile-card">
+    <div class="profile-preview">
+      <div class="profile-photo">
+        {% if profile.photo %}
+          <img src="{{ profile.photo.url }}" alt="">
+        {% else %}
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        {% endif %}
+      </div>
+      <div>
+        <span class="panel-kicker">Seu perfil</span>
+        <h1>{{ request.user.get_full_name|default:request.user.username }}</h1>
+        <p>{{ request.user.email|default:"Adicione seu email" }}</p>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="profile-form">
+      {% csrf_token %}
+      {% if user_form.non_field_errors %}<div class="form-error">{{ user_form.non_field_errors }}</div>{% endif %}
+      {% if profile_form.non_field_errors %}<div class="form-error">{{ profile_form.non_field_errors }}</div>{% endif %}
+
+      <div class="ac-form-row">
+        <label class="field">
+          <span>Nome</span>
+          {{ user_form.first_name }}
+          {% for e in user_form.first_name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
+        <label class="field">
+          <span>Sobrenome</span>
+          {{ user_form.last_name }}
+          {% for e in user_form.last_name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Email</span>
+        {{ user_form.email }}
+        {% for e in user_form.email.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+      </label>
+
+      <label class="field">
+        <span>Foto</span>
+        {{ profile_form.photo }}
+        {% for e in profile_form.photo.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+      </label>
+
+      <label class="field">
+        <span>Bio</span>
+        {{ profile_form.bio }}
+        {% for e in profile_form.bio.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+      </label>
+
+      <label class="field">
+        <span>Tema</span>
+        {{ profile_form.theme }}
+        {% for e in profile_form.theme.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+      </label>
+
+      <div class="ac-form-actions">
+        <button class="btn btn-primary" type="submit">Salvar perfil</button>
+        <a class="btn btn-secondary" href="{% url 'workspace' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
