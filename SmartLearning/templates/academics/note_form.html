@@ -5,62 +5,107 @@
 
 {% block app %}
 <section class="ac-form-wrap reveal is-visible">
-  <a class="ac-back" href="{% url 'academic_notes' %}">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-    Voltar para anotações
+  <a class="ac-back" href="{{ request.GET.next|default:'' }}{% if not request.GET.next %}{% url 'workspace' %}?tasks=open{% endif %}">
+    <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-chevron-left"/></svg>
+    {% if request.GET.next %}Voltar{% else %}Voltar para anotações{% endif %}
   </a>
-  <h1 class="ac-form-title">{% if mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}</h1>
+  <h1 class="ac-form-title">{% if request.GET.readonly %}Anotação (Somente leitura){% elif mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}</h1>
 
   <form method="post" class="ac-form" id="note-form">
     {% csrf_token %}
+    {% if request.GET.readonly %}
+      <div style="margin-bottom: 20px;">
+        <a class="btn btn-primary" href="{% url 'academic_note_edit' note.id %}">
+          <svg class="ico" width="14" height="14" stroke-width="2" style="margin-right: 6px;"><use href="#i-edit"/></svg>
+          Habilitar Edição
+        </a>
+      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          document.querySelectorAll('#note-form input:not([type="hidden"]), #note-form select, #note-form textarea').forEach(el => el.disabled = true);
+        });
+      </script>
+    {% endif %}
+    {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
 
     {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
 
     <div class="ac-form-row">
       <label class="field">
-        <span>Categoria</span>
+        <span class="field-ico">
+          <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-folder"/></svg>
+          Categoria
+        </span>
         {{ form.category }}
         {% for e in form.category.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
       </label>
       <label class="field">
-        <span>Matéria</span>
+        <span class="field-ico">
+          <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-book"/></svg>
+          Matéria
+        </span>
         {{ form.subject }}
         <small class="help-text">Crie matérias na tela de anotações.</small>
       </label>
     </div>
 
     <label class="field">
-      <span>Título</span>
+      <span class="field-ico">
+        <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-type"/></svg>
+        Título
+      </span>
       {{ form.title }}
       {% for e in form.title.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
     </label>
 
-    <label class="field">
-      <span>Página do workspace</span>
-      {{ form.workspace_page }}
-      <small class="help-text">Vincule esta anotação a uma página ou subpágina do Workspace.</small>
-    </label>
 
-    <div id="task-fields">
+
+    <div>
       <div class="ac-form-row">
         {% if mode == 'edit' %}
           <label class="field">
-            <span>Professor(a)</span>
+            <span class="field-ico">
+              <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-user"/></svg>
+              Professor(a)
+            </span>
             {{ form.professor }}
             <small class="help-text">Você pode ajustar o professor(a) nesta edição.</small>
           </label>
         {% else %}
           <input type="hidden" name="{{ form.professor.name }}" id="id_professor" value="">
           <div class="professor-preview" id="inherited-professor" aria-live="polite">
-            <span>Professor(a)</span>
+            <span class="field-ico">
+              <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-user"/></svg>
+              Professor(a)
+            </span>
             <strong>Selecione uma matéria para preencher automaticamente.</strong>
           </div>
         {% endif %}
         <label class="field">
-          <span>Data de entrega / realização</span>
+          <span class="field-ico">
+            <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-calendar"/></svg>
+            Data de entrega / realização
+          </span>
           {{ form.due_date }}
           {% for e in form.due_date.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
+      </div>
+      <div class="ac-form-row">
+        <label class="field">
+          <span class="field-ico">
+            <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-zap"/></svg>
+            Dificuldade (1 a 5)
+          </span>
+          {{ form.difficulty }}
+          {% for e in form.difficulty.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
+        <label class="field">
+          <span class="field-ico">
+            <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-clock"/></svg>
+            Tempo estimado (minutos)
+          </span>
+          {{ form.estimated_time }}
+          {% for e in form.estimated_time.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
         </label>
       </div>
       {% if mode == 'edit' %}
@@ -76,9 +121,16 @@
       {{ form.content }}
     </label>
 
+
+
     <div class="ac-form-actions">
-      <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Salvar{% else %}Criar anotação{% endif %}</button>
-      <a class="btn btn-secondary" href="{% url 'academic_notes' %}">Cancelar</a>
+      {% if not request.GET.readonly %}
+        <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Salvar{% else %}Criar anotação{% endif %}</button>
+        <a class="btn btn-secondary" href="{{ request.GET.next|default:'' }}{% if not request.GET.next %}{% url 'workspace' %}?tasks=open{% endif %}">Cancelar</a>
+      {% else %}
+        <a class="btn btn-primary" href="{% url 'academic_note_edit' form.instance.pk %}">Habilitar Edição</a>
+        <a class="btn btn-secondary" href="{{ request.GET.next|default:'' }}{% if not request.GET.next %}{% url 'workspace' %}?tasks=open{% endif %}">Voltar</a>
+      {% endif %}
     </div>
   </form>
 </section>
@@ -91,25 +143,31 @@
     var cat = document.getElementById("id_category");
     var subject = document.getElementById("id_subject");
     var professor = document.getElementById("id_professor");
-    var taskFields = document.getElementById("task-fields");
     var inherited = document.getElementById("inherited-professor");
-    var professorMapEl = document.getElementById("subject-professors");
-    var professorMap = professorMapEl ? JSON.parse(professorMapEl.textContent) : {};
+    var professorMap = {};
+    try {
+      var mapData = document.getElementById("subject-professors").textContent;
+      professorMap = JSON.parse(mapData);
+    } catch (e) {}
 
     function sync() {
       var isTask = cat.value === "trabalho" || cat.value === "prova";
-      taskFields.style.display = isTask ? "" : "none";
 
       if (!isTask || !subject || !professor || !inherited) return;
 
       var name = professorMap[subject.value] || "";
       professor.value = name;
-      inherited.innerHTML = name
-        ? "<span>Professor(a)</span><strong>" + name + "</strong>"
-        : "<span>Professor(a)</span><strong>Esta matéria não tem professor(a) cadastrado.</strong>";
+      
+      if (name) {
+        inherited.classList.remove("is-empty");
+        inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span><strong>" + name + "</strong>";
+      } else {
+        inherited.classList.add("is-empty");
+        inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span><strong style='color: var(--color-text-soft); font-weight: 500; font-size: 0.9rem;'>Esta matéria não tem professor(a) cadastrado.</strong>";
+      }
     }
 
-    cat.addEventListener("change", sync);
+    if (cat) cat.addEventListener("change", sync);
     if (subject) subject.addEventListener("change", sync);
     sync();
   })();

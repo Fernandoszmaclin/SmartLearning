@@ -38,4 +38,4 @@ def profile_toggle_theme(request):
         else Profile.Theme.DARK
     )
     profile.save(update_fields=["theme", "updated_at"])
-    return redirect(request.POST.get("next") or "/app/")
+    return redirect(request.POST.get("next") or "workspace")

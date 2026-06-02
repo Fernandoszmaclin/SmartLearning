@@ -1,9 +1,10 @@
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import F, Max
-from django.http import JsonResponse
+from django.db.models import F, Max, Prefetch
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
@@ -37,6 +38,8 @@ def _block_payload(block):
         "text": block.text,
         "checked": block.checked,
         "position": block.position,
+        "file_url": block.file.url if block.file else None,
+        "file_name": block.file.name.split("/")[-1] if block.file else None,
     }
 
 
@@ -51,19 +54,33 @@ def _user_page(request, page_id):
 def workspace(request, page_id=None):
     roots = (
         Page.objects.filter(owner=request.user, parent__isnull=True)
-        .prefetch_related("children")
+        .select_related("subject")
+        .prefetch_related(
+            Prefetch("children", queryset=Page.objects.select_related("subject"))
+        )
     )
-    favorites = Page.objects.filter(owner=request.user, is_favorite=True)
+    favorites = Page.objects.filter(owner=request.user, is_favorite=True).select_related("subject")
 
     current = None
     blocks = []
+    trail = []
     if page_id is not None:
         current = _user_page(request, page_id)
         blocks = list(current.blocks.all())
+        # Trilha de ancestrais (raiz → página atual), estilo Notion.
+        node, seen = current, set()
+        while node is not None and node.id not in seen:
+            seen.add(node.id)
+            trail.append(node)
+            node = node.parent
+        trail.reverse()
     else:
         first = Page.objects.filter(owner=request.user).first()
         if first:
-            return redirect("workspace_page", page_id=first.id)
+            url = reverse("workspace_page", args=[first.id])
+            if request.GET.get("tasks"):
+                url = f"{url}?tasks={request.GET['tasks']}"
+            return redirect(url)
 
     from pomodoro.models import PomodoroSession
 
@@ -76,16 +93,44 @@ def workspace(request, page_id=None):
     )
     focus_minutes = sum(s.minutes for s in todays)
 
+    # ----- Gaveta "Anotações" (trabalhos e provas) integrada -----
+    # Estudos = páginas do workspace (árvore ao lado). A gaveta cuida só de
+    # trabalho/prova. Mandamos as anotações de uma vez e o JS filtra por
+    # tipo/matéria/terminadas — troca de aba instantânea, sem recarregar o editor.
+    from academics.models import Note, Subject
+
+    ac_subjects = Subject.objects.filter(owner=request.user)
+    ac_notes = (
+        Note.objects.filter(owner=request.user)
+        .select_related("subject", "workspace_page")
+        .order_by("-created_at")
+    )
+    # Quantos trabalhos/provas seguem pendentes → badge no botão "Anotações".
+    task_pending_count = Note.objects.filter(
+        owner=request.user,
+        category__in=[Note.Category.TRABALHO, Note.Category.PROVA],
+        is_done=False,
+    ).count()
+    # Anotação acadêmica vinculada à página aberta → chip de contexto no editor.
+    current_note = current.academic_notes.first() if current else None
+
     return render(request, "notes/workspace.html", {
         "roots": roots,
         "favorites": favorites,
         "current": current,
+        "trail": trail,
         "blocks": blocks,
         "block_kinds": Block.Kind.choices,
         "focus_sessions_today": todays.count(),
         "focus_minutes_today": focus_minutes,
         "pomodoro_page_id": current.id if current else "",
         "pomodoro_open": False,
+        # Gaveta de anotações (trabalho/prova)
+        "ac_subjects": ac_subjects,
+        "ac_notes": ac_notes,
+        "task_pending_count": task_pending_count,
+        "current_note": current_note,
+        "today": today,
     })
 
 
@@ -103,9 +148,53 @@ def api_page_create(request):
         owner=request.user,
         parent=parent,
         title=data.get("title") or "Untitled",
+        icon=data.get("icon") or "📄",
         position=(nxt or 0) + 1,
     )
     return JsonResponse(_page_payload(page), status=201)
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_page_move(request, page_id):
+    """Move/reordena uma página: define o pai (pasta) e a ordem entre irmãos.
+
+    body: {"parent": <id|null>, "order": [ids...]}  (order opcional)
+    """
+    page = _user_page(request, page_id)
+    data = _json(request)
+
+    parent_id = data.get("parent")
+    new_parent = _user_page(request, parent_id) if parent_id else None
+
+    # Impede mover uma página para dentro dela mesma ou de uma descendente.
+    anc = new_parent
+    while anc is not None:
+        if anc.id == page.id:
+            return JsonResponse(
+                {"error": "Não dá para mover uma página para dentro dela mesma."},
+                status=400,
+            )
+        anc = anc.parent
+
+    page.parent = new_parent
+    order = data.get("order") or []
+    if order:
+        position = {int(pid): i for i, pid in enumerate(order)}
+        page.position = position.get(page.id, 0)
+        page.save()
+        for pid, i in position.items():
+            if pid != page.id:
+                Page.objects.filter(id=pid, owner=request.user).update(position=i)
+    else:
+        nxt = (
+            Page.objects.filter(owner=request.user, parent=new_parent)
+            .exclude(id=page.id)
+            .aggregate(m=Max("position"))["m"]
+        )
+        page.position = (nxt or 0) + 1
+        page.save()
+    return JsonResponse({"ok": True, "parent": new_parent.id if new_parent else None})
 
 
 @login_required
@@ -165,12 +254,20 @@ def api_block_reorder(request, page_id):
 
 
 @login_required
-@require_http_methods(["PATCH", "DELETE"])
+@require_http_methods(["PATCH", "DELETE", "POST"])
 def api_block_detail(request, block_id):
     block = get_object_or_404(Block, id=block_id, page__owner=request.user)
     if request.method == "DELETE":
         block.delete()
         return JsonResponse({"deleted": block_id})
+
+    # For file uploads, we might use POST with multipart data
+    if request.method == "POST" and request.FILES:
+        if "file" in request.FILES:
+            block.file = request.FILES["file"]
+            block.kind = Block.Kind.FILE
+            block.save()
+        return JsonResponse(_block_payload(block))
 
     data = _json(request)
     if "text" in data:
@@ -183,3 +280,72 @@ def api_block_detail(request, block_id):
         block.position = data["position"]
     block.save()
     return JsonResponse(_block_payload(block))
+
+
+# ---------- exports & backup ----------
+
+@login_required
+def export_markdown(request, page_id):
+    page = _user_page(request, page_id)
+    blocks = page.blocks.all()
+    md_lines = [f"# {page.display_title}", ""]
+    
+    for b in blocks:
+        if b.kind == Block.Kind.HEADING1:
+            md_lines.append(f"# {b.text}")
+        elif b.kind == Block.Kind.HEADING2:
+            md_lines.append(f"## {b.text}")
+        elif b.kind == Block.Kind.HEADING3:
+            md_lines.append(f"### {b.text}")
+        elif b.kind == Block.Kind.BULLET:
+            md_lines.append(f"- {b.text}")
+        elif b.kind == Block.Kind.TODO:
+            checked = "x" if b.checked else " "
+            md_lines.append(f"- [{checked}] {b.text}")
+        elif b.kind == Block.Kind.QUOTE:
+            md_lines.append(f"> {b.text}")
+        elif b.kind == Block.Kind.CODE:
+            md_lines.append("```\n" + b.text + "\n```")
+        elif b.kind == Block.Kind.DIVIDER:
+            md_lines.append("---")
+        else:
+            md_lines.append(b.text)
+        md_lines.append("")  # space between blocks
+
+    content = "\n".join(md_lines)
+    response = HttpResponse(content, content_type="text/markdown; charset=utf-8")
+    filename = f"{page.display_title.replace(' ', '_')}.md"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def export_backup(request):
+    """Exporta todos os dados da workspace (páginas e blocos) do usuário em JSON."""
+    pages = Page.objects.filter(owner=request.user).prefetch_related("blocks")
+    data = []
+    for p in pages:
+        page_data = {
+            "id": p.id,
+            "parent_id": p.parent_id,
+            "title": p.title,
+            "icon": p.icon,
+            "is_favorite": p.is_favorite,
+            "position": p.position,
+            "created_at": p.created_at.isoformat(),
+            "blocks": []
+        }
+        for b in p.blocks.all():
+            page_data["blocks"].append({
+                "id": b.id,
+                "kind": b.kind,
+                "text": b.text,
+                "checked": b.checked,
+                "position": b.position,
+            })
+        data.append(page_data)
+
+    response = HttpResponse(json.dumps(data, indent=2, ensure_ascii=False), content_type="application/json; charset=utf-8")
+    filename = f"workspace_backup_{timezone.now().strftime('%Y%m%d')}.json"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

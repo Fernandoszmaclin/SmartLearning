@@ -11,7 +11,7 @@ def _subject_queryset(user):
     return (
         Subject.objects.filter(owner=user)
         .annotate(
-            estudo_count=Count("notes", filter=Q(notes__category=Note.Category.ESTUDO)),
+            estudo_count=Count("folders", distinct=True),
             trabalho_count=Count("notes", filter=Q(notes__category=Note.Category.TRABALHO)),
             prova_count=Count("notes", filter=Q(notes__category=Note.Category.PROVA)),
         )
@@ -24,7 +24,6 @@ def _notes_for_subject(subject, sort):
     if sort == "upcoming":
         task_order = ["is_done", F("due_date").asc(nulls_last=True), "-created_at"]
         return {
-            Note.Category.ESTUDO: notes.filter(category=Note.Category.ESTUDO).order_by("-created_at"),
             Note.Category.PROVA: notes.filter(category=Note.Category.PROVA).order_by(*task_order),
             Note.Category.TRABALHO: notes.filter(category=Note.Category.TRABALHO).order_by(*task_order),
         }
@@ -50,11 +49,13 @@ def subject_detail(request, pk):
         sort = "upcoming"
 
     grouped = _notes_for_subject(subject, sort)
+    from notes.models import Page
+    estudos = Page.objects.filter(Q(subject=subject) | Q(parent__subject=subject)).order_by("-created_at")
     return render(request, "courses/subject_detail.html", {
         "subject": subject,
         "sort": sort,
         "groups": [
-            ("estudo", "Estudo", grouped[Note.Category.ESTUDO]),
+            ("estudo", "Estudo", estudos),
             ("prova", "Prova", grouped[Note.Category.PROVA]),
             ("trabalho", "Trabalho", grouped[Note.Category.TRABALHO]),
         ],

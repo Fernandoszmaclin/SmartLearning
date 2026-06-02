@@ -18,8 +18,9 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 
+from courses import views as course_views
 from . import views
 
 urlpatterns = [
@@ -30,19 +31,28 @@ urlpatterns = [
     path('termos/', TemplateView.as_view(
         template_name='legal.html',
         extra_context={'titulo': 'Termos de Uso'}), name='termos'),
-    path('courses/', include('courses.urls')),
+
+    # Busca global (anotações + páginas + matérias)
+    path('buscar/', views.search, name='search'),
 
     # Auth
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/profile/', include('profiles.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
 
-    # Study workspace (Notion-like notes + Pomodoro)
-    path('app/', include('notes.urls')),
-    path('app/', include('pomodoro.urls')),
+    # App padronizado sob /academico/
+    path('academico/workspace/', include('notes.urls')),       # workspace + API
+    path('academico/workspace/', include('pomodoro.urls')),    # API do pomodoro
+    path('academico/materia/', course_views.course_list, name='course_list'),
+    path('academico/materia/', include('courses.urls')),       # matérias
+    path('academico/', include('academics.urls')),             # anotações, minha-área, calendário
 
-    # Anotações acadêmicas + calendário
-    path('academico/', include('academics.urls')),
+    # Redirects das URLs antigas -> novas (não quebra favoritos)
+    path('app/', RedirectView.as_view(pattern_name='workspace', permanent=True)),
+    path('app/p/<int:page_id>/', RedirectView.as_view(pattern_name='workspace_page', permanent=True)),
+    path('courses/', RedirectView.as_view(pattern_name='course_list', permanent=True)),
+    path('academico/estudos/', RedirectView.as_view(pattern_name='course_list', permanent=True)),
+    path('materias/', RedirectView.as_view(pattern_name='course_list', permanent=True)),
 
     path('admin/', admin.site.urls),
 ]

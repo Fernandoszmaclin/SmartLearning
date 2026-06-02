@@ -30,68 +30,74 @@
       </a>
       <nav class="nav" aria-label="Primary">
         {% if user.is_authenticated %}
-          <a class="btn btn-secondary" href="{% url 'dashboard' %}">Minha área</a>
-          <details class="user-menu">
-            <summary>
-              <span class="user-avatar">
-                {% if active_profile.photo %}
-                  <img src="{{ active_profile.photo.url }}" alt="">
+          <a class="btn btn-secondary btn-sm" href="{% url 'dashboard' %}">Minha área</a>
+          <!-- ================= FLUID USER MENU ================= -->
+          <div class="fluid-menu-container" id="user-fluid-menu">
+            <!-- Logout -->
+            <a href="#" class="fluid-item fluid-child" style="--i: {% if request.user.is_staff %}5{% else %}4{% endif %}" title="Sair" onclick="event.preventDefault(); document.getElementById('logout-form-fluid').submit();">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+              </svg>
+            </a>
+            <form id="logout-form-fluid" method="post" action="{% url 'logout' %}" style="display:none;">{% csrf_token %}</form>
+
+            <!-- Admin -->
+            {% if request.user.is_staff %}
+            <a href="/admin/" class="fluid-item fluid-child" style="--i: 4" title="Admin">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </a>
+            {% endif %}
+
+            <!-- Home -->
+            <a href="{% url 'landing' %}" class="fluid-item fluid-child" style="--i: 3" title="Página inicial">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>
+              </svg>
+            </a>
+
+            <!-- Theme -->
+            <form method="post" action="{% url 'profile_toggle_theme' %}" class="fluid-child-form fluid-child" style="--i: 2">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path|default:'/' }}">
+              <button type="submit" class="fluid-item w-full h-full" title="Alternar Tema">
+                {% if active_profile.theme == 'dark' %}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                  </svg>
                 {% else %}
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a6 6 0 0 0 9 7.3A9 9 0 1 1 12 3z"/>
                   </svg>
                 {% endif %}
-              </span>
-              {{ request.user.get_full_name|default:request.user.username }}
-            </summary>
-            <div class="user-pop">
-              <a href="{% url 'profile_edit' %}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              </button>
+            </form>
+
+            <!-- Settings -->
+            <a href="{% url 'profile_edit' %}" class="fluid-item fluid-child" style="--i: 1" title="Editar perfil">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </a>
+
+            <!-- Trigger -->
+            <div class="fluid-trigger" id="fluid-menu-trigger">
+              {% if active_profile.photo %}
+                <img src="{{ active_profile.photo.url }}" alt="">
+              {% else %}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
                 </svg>
-                Editar perfil
-              </a>
-              <form method="post" action="{% url 'profile_toggle_theme' %}">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ request.get_full_path|default:'/' }}">
-                <button type="submit">
-                  {% if active_profile.theme == 'dark' %}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-                    </svg>
-                  {% else %}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M12 3a6 6 0 0 0 9 7.3A9 9 0 1 1 12 3z"/>
-                    </svg>
-                  {% endif %}
-                  {% if active_profile.theme == 'dark' %}Modo claro{% else %}Modo escuro{% endif %}
-                </button>
-              </form>
-              {% if request.user.is_staff %}
-                <a href="/admin/">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-                  Admin
-                </a>
               {% endif %}
-              <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="danger">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
-                  </svg>
-                  Sair
-                </button>
-              </form>
+              <div class="fluid-x">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+              </div>
             </div>
-          </details>
+          </div>
+          <!-- ================= /FLUID USER MENU ================= -->
         {% else %}
           <a class="nav-secondary" href="{% url 'login' %}">Entrar</a>
           <a class="btn btn-primary" href="{% url 'signup' %}">Começar</a>
@@ -114,5 +120,22 @@
     </div>
   </footer>
   <script src="{% static 'js/reveal.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const fluidTrigger = document.getElementById('fluid-menu-trigger');
+      const fluidContainer = document.getElementById('user-fluid-menu');
+      if (fluidTrigger && fluidContainer) {
+        fluidTrigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          fluidContainer.classList.toggle('is-expanded');
+        });
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('#user-fluid-menu')) {
+            fluidContainer.classList.remove('is-expanded');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>

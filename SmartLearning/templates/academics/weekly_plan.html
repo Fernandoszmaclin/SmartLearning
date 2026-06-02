@@ -1,0 +1,84 @@
+{% extends "app_base.html" %}
+{% load static %}
+{% block title %}Plano Semanal Inteligente - SmartLearning{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/academics.css' %}">{% endblock %}
+
+{% block app %}
+<header class="ac-head" style="flex-wrap: wrap; gap: 20px;">
+  <div>
+    <h1>Plano Semanal Inteligente</h1>
+    <p>Distribuição automática baseada em Urgência, Dificuldade e Tempo Disponível.</p>
+  </div>
+  <form method="get" class="planner-form" style="display:flex; gap:10px; align-items:center;">
+    <label for="available_time" style="font-weight:600;">Tempo diário:</label>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <input type="number" name="available_time" id="available_time" value="{{ available_time }}" min="30" step="30" class="input" style="width:100px;">
+      <span style="color:var(--color-text-soft);">minutos</span>
+      <button type="submit" class="btn btn-primary">Recalcular</button>
+    </div>
+  </form>
+</header>
+
+<div class="weekly-plan-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px;">
+  {% for day in days %}
+  <div class="plan-day" style="background: var(--color-surface); border: 1px solid {% if day.date == today %}var(--color-primary){% else %}var(--color-border){% endif %}; border-radius: var(--radius-lg); padding: 15px;">
+    <h3 style="margin: 0 0 15px; font-size: 1.1rem; display:flex; justify-content:space-between; align-items:center; padding-bottom: 10px; border-bottom: 1px solid var(--color-border);">
+      <span style="display:flex; align-items:center; gap:8px;">
+        {{ day.weekday }} <small style="color:var(--color-text-soft); font-weight:normal; font-size:0.8rem;">{{ day.date|date:"d/m" }}</small>
+        {% if day.date == today %}<span style="background:var(--color-primary); color:#fff; font-size:0.65rem; padding: 2px 6px; border-radius:99px; text-transform:uppercase; font-weight:bold;">Hoje</span>{% endif %}
+      </span>
+      <span style="font-size:0.8rem; font-weight:normal; color:{% if day.time_used > day.time_available %}#e63946{% else %}var(--color-text-soft){% endif %}; white-space:nowrap;">
+        {{ day.time_used }}/{{ day.time_available }}m
+      </span>
+    </h3>
+    <div class="plan-tasks" style="display: flex; flex-direction: column; gap: 10px;">
+      {% for task in day.tasks %}
+      <a href="{% url 'academic_note_edit' task.pk %}" class="plan-task-card" style="display:block; padding: 12px; border: 1px solid var(--color-muted); border-radius: 8px; text-decoration:none; color:inherit; background:var(--color-background); transition:border-color 150ms;">
+        <div style="font-size: 0.75rem; margin-bottom:6px; display:flex; justify-content:space-between;">
+          <span class="ac-badge cat-{{ task.category }}" style="font-size:0.6rem;">{{ task.get_category_display }}</span>
+          {% if task.subject %}
+            <span style="color:var(--color-text-soft); display:flex; align-items:center; gap:4px;">
+              <span class="dot" style="background: {{ task.subject.color }}; width:8px; height:8px; border-radius:50%;"></span>
+              {{ task.subject.name }}
+            </span>
+          {% endif %}
+        </div>
+        <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; line-height: 1.3;">{{ task.title }}</div>
+        <div style="font-size: 0.75rem; color: var(--color-text-soft); display:flex; justify-content:space-between; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">
+            <svg class="ico" width="14" height="14" stroke-width="2"><use href="#i-clock"/></svg>
+            {{ task.estimated_time }}m
+          </span>
+          <span style="display:flex; align-items:center; gap:4px;">
+            <svg class="ico" width="14" height="14" stroke-width="2"><use href="#i-zap"/></svg>
+            Dificuldade: {{ task.difficulty }}/5
+          </span>
+        </div>
+      </a>
+      {% empty %}
+      <div style="color:var(--color-text-soft); font-size:0.9rem; text-align:center; padding: 25px 0;">Nenhuma tarefa.</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if unassigned %}
+<div class="unassigned-tasks" style="margin-top: 40px; padding: 20px; background: rgba(230,57,70,0.05); border: 1px solid #e63946; border-radius: var(--radius-lg);">
+  <h3 style="color: #e63946; margin: 0 0 15px; display:flex; align-items:center; gap:8px;">
+    <svg class="ico" width="20" height="20" stroke-width="2"><use href="#i-alert"/></svg>
+    Não couberam na semana
+  </h3>
+  <p style="font-size: 0.95rem; margin-bottom: 20px; color:var(--color-foreground);">As seguintes tarefas exigem mais tempo do que o disponível nos dias antes de seus prazos (ou não há tempo livre suficiente). Você precisará de mais tempo diário para acomodá-las.</p>
+  <div style="display: flex; gap: 15px; flex-wrap:wrap;">
+    {% for task in unassigned %}
+    <div style="background:var(--color-surface); border:1px solid #e63946; padding: 15px; border-radius: 8px; font-size: 0.85rem; min-width: 200px;">
+      <div style="font-weight:bold; margin-bottom:8px; font-size:1rem;">{{ task.title }}</div>
+      <div style="color:var(--color-text-soft); margin-bottom:4px;">Precisa de: <strong>{{ task.estimated_time }}m</strong></div>
+      <div style="color:var(--color-text-soft);">Prazo: {{ task.due_date|date:"d/m/Y"|default:"Sem prazo" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
