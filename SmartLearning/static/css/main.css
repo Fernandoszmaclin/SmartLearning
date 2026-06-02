@@ -695,6 +695,7 @@ img, svg { max-width: 100%; display: block; }
 
 /* ---- Empty state ---- */
 .empty-state { text-align: center; padding-block: var(--space-3xl); color: var(--color-text-soft); }
+.empty-state p { margin-inline: auto; }
 
 /* ---- Footer ---- */
 .site-footer {

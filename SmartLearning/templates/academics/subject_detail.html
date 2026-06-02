@@ -51,7 +51,7 @@
           {% if key == 'estudo' %}
             <a href="{% url 'workspace' %}">Acessar</a>
           {% else %}
-            <a href="{% url 'academic_note_create' %}?category={{ key }}&subject={{ subject.id }}">Adicionar</a>
+            <a href="{% url 'academic_note_create' %}?category={{ key }}&subject={{ subject.id }}&next={{ request.get_full_path|urlencode }}">Adicionar</a>
           {% endif %}
         </div>
 

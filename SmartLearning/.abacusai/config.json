@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py check 2>&1 || true)",
+      "Bash(python -m py_compile SmartLearning/urls.py courses/urls.py)",
+      "Bash(python -m py_compile SmartLearning/urls.py)"
+    ]
+  }
+}

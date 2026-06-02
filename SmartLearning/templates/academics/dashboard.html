@@ -14,7 +14,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
         Plano Semanal
       </a>
-      <a class="btn btn-primary" href="{% url 'academic_note_create' %}">Nova anotação</a>
+      <a class="btn btn-primary" href="{% url 'academic_note_create' %}?next={{ request.get_full_path|urlencode }}">Nova anotação</a>
     </div>
   </header>
 
@@ -146,8 +146,8 @@
     </div>
     {% else %}
     <div class="empty-state">
-      <h3>Nenhuma matéria ainda</h3>
-      <p>Crie matérias para organizar seus estudos por cadeira.</p>
+      <h3 style="margin-bottom: 1rem;">Nenhuma matéria ainda</h3>
+      <p style="margin-bottom: 2rem;">Crie matérias para organizar seus estudos por cadeira.</p>
       <a class="btn btn-primary" href="{% url 'subject_list' %}">Adicionar matéria</a>
     </div>
     {% endif %}

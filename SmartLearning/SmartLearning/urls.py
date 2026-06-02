@@ -10,6 +10,9 @@ urlpatterns = [
     path('termos/', views.terms_view, name='terms'),
     path('privacidade/', views.privacy_view, name='privacy'),
 
+    # Busca global
+    path('busca/', views.search, name='search'),
+
     # Autenticao (login, logout, password_reset, etc.)
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/signup/', views.signup, name='signup'),

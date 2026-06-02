@@ -10,7 +10,7 @@
   <meta property="og:title" content="SmartLearning: sua área de estudos">
   <meta property="og:description" content="Anotações no estilo Notion, calendário acadêmico e Pomodoro num lugar só.">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
@@ -114,8 +114,8 @@
     <div class="container">
       <span>&copy; {% now "Y" %} SmartLearning. Aprenda algo hoje.</span>
       <nav class="footer-links" aria-label="Rodapé">
-        <a href="{% url 'privacidade' %}">Privacidade</a>
-        <a href="{% url 'termos' %}">Termos</a>
+        <a href="{% url 'privacy' %}">Privacidade</a>
+        <a href="{% url 'terms' %}">Termos</a>
       </nav>
     </div>
   </footer>

@@ -129,3 +129,15 @@ def signup(request):
         form = UserCreationForm()
 
     return render(request, "registration/signup.html", {"form": form})
+
+
+def landing_page(request):
+    # A página inicial é acessível mesmo logado (o template adapta o CTA),
+    # para que o botão "Página inicial" do menu funcione.
+    return render(request, "landing.html")
+
+def terms_view(request):
+    return render(request, "legal.html")
+
+def privacy_view(request):
+    return render(request, "legal.html")
