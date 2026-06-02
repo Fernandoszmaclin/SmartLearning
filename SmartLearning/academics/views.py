@@ -3,7 +3,7 @@ from collections import Counter
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Max, Prefetch
+from django.db.models import Max, Prefetch, Count, F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -188,7 +188,7 @@ def subject_create(request):
         # ignore duplicates silently
         if not Subject.objects.filter(owner=request.user, name=subject.name).exists():
             subject.save()
-    return redirect(request.POST.get("next") or "course_list")
+    return redirect(request.POST.get("next") or "subject_list")
 
 
 @login_required
@@ -426,3 +426,87 @@ def weekly_plan(request):
         "available_time": available_time_per_day,
         "today": today,
     })
+
+
+def _subject_queryset(user):
+    return (
+        Subject.objects.filter(owner=user)
+        .annotate(
+            estudo_count=Count("folders", distinct=True),
+            trabalho_count=Count("notes", filter=Q(notes__category=Note.Category.TRABALHO)),
+            prova_count=Count("notes", filter=Q(notes__category=Note.Category.PROVA)),
+        )
+        .order_by("name")
+    )
+
+
+
+def _notes_for_subject(subject, sort):
+    notes = subject.notes.select_related("workspace_page")
+    if sort == "upcoming":
+        task_order = ["is_done", F("due_date").asc(nulls_last=True), "-created_at"]
+        return {
+            Note.Category.PROVA: notes.filter(category=Note.Category.PROVA).order_by(*task_order),
+            Note.Category.TRABALHO: notes.filter(category=Note.Category.TRABALHO).order_by(*task_order),
+        }
+    return {
+        category: notes.filter(category=category).order_by("-created_at")
+        for category in Note.Category.values
+    }
+
+
+
+@login_required
+def subject_list(request):
+    return render(request, "courses/subject_list.html", {
+        "subjects": _subject_queryset(request.user),
+        "subject_form": SubjectForm(),
+    })
+
+
+
+@login_required
+def subject_detail(request, pk):
+    subject = get_object_or_404(Subject, pk=pk, owner=request.user)
+    sort = request.GET.get("sort") or "upcoming"
+    if sort not in {"upcoming", "recent"}:
+        sort = "upcoming"
+
+    grouped = _notes_for_subject(subject, sort)
+    from notes.models import Page
+    estudos = Page.objects.filter(Q(subject=subject) | Q(parent__subject=subject)).order_by("-created_at")
+    return render(request, "academics/subject_detail.html", {
+        "subject": subject,
+        "sort": sort,
+        "groups": [
+            ("estudo", "Estudo", estudos),
+            ("prova", "Prova", grouped[Note.Category.PROVA]),
+            ("trabalho", "Trabalho", grouped[Note.Category.TRABALHO]),
+        ],
+    })
+
+
+
+@login_required
+def subject_edit(request, pk):
+    subject = get_object_or_404(Subject, pk=pk, owner=request.user)
+    if request.method == "POST":
+        form = SubjectForm(request.POST, instance=subject)
+        if form.is_valid():
+            form.save()
+            return redirect("subject_detail", pk=subject.pk)
+    else:
+        form = SubjectForm(instance=subject)
+    return render(request, "academics/subject_form.html", {
+        "form": form,
+        "subject": subject,
+    })
+
+
+
+@login_required
+@require_POST
+def subject_delete(request, pk):
+    subject = get_object_or_404(Subject, pk=pk, owner=request.user)
+    subject.delete()
+    return redirect("subject_list")

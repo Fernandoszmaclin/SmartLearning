@@ -27,7 +27,7 @@
         <a href="{% url 'dashboard' %}" {% if un == 'dashboard' %}class="is-active"{% endif %}>Minha área</a>
         <a href="{% url 'workspace' %}" {% if un == 'workspace' or un == 'workspace_page' %}class="is-active"{% endif %}>Workspace</a>
         <a href="{% url 'academic_calendar' %}" {% if un == 'academic_calendar' %}class="is-active"{% endif %}>Calendário</a>
-        <a href="{% url 'course_list' %}" {% if un == 'course_list' or un == 'course_create' or un == 'subject_detail' or un == 'subject_edit' %}class="is-active"{% endif %}>Matérias</a>
+        <a href="{% url 'subject_list' %}" {% if un == 'subject_list' or un == 'academic_subject_create' or un == 'subject_detail' or un == 'subject_edit' %}class="is-active"{% endif %}>Matérias</a>
       </nav>
 
       <div class="app-bar-right">
@@ -427,3 +427,4 @@
   </script>
 </body>
 </html>
+
