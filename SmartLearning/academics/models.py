@@ -32,7 +32,6 @@ class Note(models.Model):
     """Anotação acadêmica: estudo, trabalho ou prova."""
 
     class Category(models.TextChoices):
-        ESTUDO = "estudo", "Estudo"
         TRABALHO = "trabalho", "Trabalho"
         PROVA = "prova", "Prova"
 
@@ -42,7 +41,7 @@ class Note(models.Model):
         related_name="academic_notes",
     )
     category = models.CharField(
-        "Categoria", max_length=10, choices=Category.choices, default=Category.ESTUDO
+        "Categoria", max_length=10, choices=Category.choices, default=Category.TRABALHO
     )
     title = models.CharField("Título", max_length=200)
     content = models.TextField("Conteúdo", blank=True)
@@ -66,6 +65,9 @@ class Note(models.Model):
     professor = models.CharField("Professor(a)", max_length=120, blank=True)
     due_date = models.DateField("Data de entrega/realização", null=True, blank=True)
     is_done = models.BooleanField("Terminado", default=False)
+    
+    difficulty = models.IntegerField("Dificuldade (1-5)", default=3)
+    estimated_time = models.IntegerField("Tempo estimado (min)", default=60)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

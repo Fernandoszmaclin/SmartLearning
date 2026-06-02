@@ -22,6 +22,14 @@ class Page(models.Model):
         max_length=8, blank=True, default="📄",
         help_text="A single emoji used as the page icon (page content, not UI chrome).",
     )
+    subject = models.ForeignKey(
+        "academics.Subject",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="folders",
+        help_text="Quando preenchido numa página raiz, ela é a pasta dessa matéria.",
+    )
     is_favorite = models.BooleanField(default=False)
     position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -51,6 +59,7 @@ class Block(models.Model):
         QUOTE = "quote", "Quote"
         CODE = "code", "Code"
         DIVIDER = "divider", "Divider"
+        FILE = "file", "Arquivo"
 
     page = models.ForeignKey(
         Page, on_delete=models.CASCADE, related_name="blocks"
@@ -59,6 +68,7 @@ class Block(models.Model):
         max_length=20, choices=Kind.choices, default=Kind.PARAGRAPH
     )
     text = models.TextField(blank=True)
+    file = models.FileField(upload_to="blocks/files/", null=True, blank=True)
     checked = models.BooleanField(default=False)
     position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

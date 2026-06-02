@@ -3,11 +3,14 @@ from collections import Counter
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+from django.db.models import Max, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+
+from notes.models import Page
 
 from .forms import NoteForm, SubjectForm
 from .models import Note, Subject
@@ -43,48 +46,65 @@ def _inherit_subject_professor(note):
         note.professor = note.subject.professor
 
 
-@login_required
-def note_list(request):
-    category = request.GET.get("category", Note.Category.ESTUDO)
-    if category not in Note.Category.values:
-        category = Note.Category.ESTUDO
-    subject_id = request.GET.get("subject") or ""
-    # ?all=1 → mostra tudo (até terminados). Caminho padrão esconde terminados.
-    show_all = request.GET.get("all") == "1"
+def _next_page_position(user, parent):
+    m = Page.objects.filter(owner=user, parent=parent).aggregate(m=Max("position"))["m"]
+    return (m or 0) + 1
 
-    is_task_cat = category in (Note.Category.TRABALHO, Note.Category.PROVA)
 
-    notes = (
-        Note.objects.filter(owner=request.user, category=category)
-        .select_related("subject")
-    )
-    if is_task_cat and not show_all:
-        notes = notes.filter(is_done=False)
-    if subject_id:
-        notes = notes.filter(subject_id=subject_id)
+def _auto_subject_folder(user, subject):
+    """Pasta (página raiz) da matéria; cria se não existir. None quando sem matéria."""
+    if subject is None:
+        return None
+    folder = Page.objects.filter(
+        owner=user, subject=subject, parent__isnull=True
+    ).first()
+    if folder is None:
+        folder = Page.objects.create(
+            owner=user, parent=None, subject=subject,
+            title=subject.name, icon="📁",
+            position=_next_page_position(user, None),
+        )
+    return folder
 
-    base = Note.objects.filter(owner=request.user)
 
-    def _count(cat):
-        qs = base.filter(category=cat)
-        if cat in (Note.Category.TRABALHO, Note.Category.PROVA) and not show_all:
-            qs = qs.filter(is_done=False)
-        return qs.count()
+def _safe_next(request):
+    """Devolve o ?next= se ele apontar para dentro do próprio site; senão None."""
+    nxt = request.POST.get("next") or request.GET.get("next")
+    if nxt and url_has_allowed_host_and_scheme(
+        nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return nxt
+    return None
 
-    counts = {c: _count(c) for c, _ in Note.Category.choices}
 
-    return render(request, "academics/note_list.html", {
-        "notes": notes,
-        "category": category,
-        "categories": Note.Category.choices,
-        "counts": counts,
-        "subjects": Subject.objects.filter(owner=request.user),
-        "selected_subject": subject_id,
-        "subject_form": SubjectForm(),
-        "today": timezone.localdate(),
-        "show_all": show_all,
-        "is_task_cat": is_task_cat,
-    })
+def _post_save_redirect(note, next_url=None):
+    """Para onde ir depois de salvar.
+
+    Estudo abre direto na página do workspace (é onde o conteúdo vive). Tarefas
+    voltam para o ``next`` (ex.: o painel Acadêmico do workspace) quando houver;
+    senão caem na lista de anotações filtrada pela categoria.
+    """
+    if note.category == Note.Category.ESTUDO and note.workspace_page_id:
+        return redirect("workspace_page", page_id=note.workspace_page_id)
+    if next_url:
+        return redirect(next_url)
+    # Tarefas (trabalho/prova) vivem na gaveta "Anotações" do workspace.
+    return redirect(f"{reverse('workspace')}?tasks=open")
+
+
+def _subject_folders(user):
+    """Mapa {id_da_matéria: título da pasta} das matérias que já têm pasta."""
+    folders = Page.objects.filter(
+        owner=user, parent__isnull=True, subject__isnull=False
+    ).select_related("subject")
+    return {str(f.subject_id): f.display_title for f in folders}
+
+
+def _target_folder(form, user, subject):
+    """Pasta-destino da página: a da matéria se o usuário marcar a opção; senão raiz."""
+    if subject and form.cleaned_data.get("use_subject_folder"):
+        return _auto_subject_folder(user, subject)
+    return None
 
 
 @login_required
@@ -104,7 +124,7 @@ def note_create(request):
             note.owner = request.user
             _inherit_subject_professor(note)
             note.save()
-            return redirect(f"{reverse('academic_notes')}?category={note.category}")
+            return _post_save_redirect(note, _safe_next(request))
     else:
         form = NoteForm(owner=request.user, initial=initial)
 
@@ -112,6 +132,7 @@ def note_create(request):
         "form": form,
         "mode": "new",
         "subject_professors": _subject_professors(request.user),
+        "subject_folders": _subject_folders(request.user),
     })
 
 
@@ -122,14 +143,20 @@ def note_edit(request, pk):
         form = NoteForm(request.POST, instance=note, owner=request.user)
         if form.is_valid():
             form.save()
-            return redirect(f"{reverse('academic_notes')}?category={note.category}")
+            return _post_save_redirect(note, _safe_next(request))
     else:
-        form = NoteForm(instance=note, owner=request.user)
+        initial = {}
+        page = note.workspace_page
+        if (page and page.parent_id and note.subject_id
+                and page.parent.subject_id == note.subject_id):
+            initial["use_subject_folder"] = True
+        form = NoteForm(instance=note, owner=request.user, initial=initial)
     return render(request, "academics/note_form.html", {
         "form": form,
         "mode": "edit",
         "note": note,
         "subject_professors": _subject_professors(request.user),
+        "subject_folders": _subject_folders(request.user),
     })
 
 
@@ -137,9 +164,8 @@ def note_edit(request, pk):
 @require_POST
 def note_delete(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
-    category = note.category
     note.delete()
-    return redirect(f"{reverse('academic_notes')}?category={category}")
+    return redirect(_safe_next(request) or f"{reverse('workspace')}?tasks=open")
 
 
 @login_required
@@ -148,7 +174,7 @@ def note_toggle_done(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
     note.is_done = not note.is_done
     note.save(update_fields=["is_done", "updated_at"])
-    nxt = request.POST.get("next") or f"{reverse('academic_notes')}?category={note.category}"
+    nxt = request.POST.get("next") or f"{reverse('workspace')}?tasks=open"
     return redirect(nxt)
 
 
@@ -162,7 +188,7 @@ def subject_create(request):
         # ignore duplicates silently
         if not Subject.objects.filter(owner=request.user, name=subject.name).exists():
             subject.save()
-    return redirect(request.POST.get("next") or "academic_notes")
+    return redirect(request.POST.get("next") or "course_list")
 
 
 @login_required
@@ -175,11 +201,13 @@ def dashboard(request):
 
     C = Note.Category
     base = Note.objects.filter(owner=user)
+    pages_base = Page.objects.filter(owner=user)
     # Totais por categoria (incluem terminados — contam aqui em "Minha área").
     counts = {c: base.filter(category=c).count() for c, _ in C.choices}
-    total_notes = base.count()
+    counts["estudo"] = pages_base.count()  # Estudos agora são Páginas
+    total_notes = base.count() + pages_base.count()
 
-    tasks = base.filter(category__in=[C.TRABALHO, C.PROVA]).select_related("subject")
+    tasks = base.select_related("subject")
     week_tasks = tasks.filter(
         is_done=False, due_date__gte=week_start, due_date__lte=week_end
     ).order_by("due_date")
@@ -191,8 +219,8 @@ def dashboard(request):
     grid_start = this_sunday - timedelta(weeks=HEATMAP_WEEKS - 1)
 
     per_day = Counter()
-    for created in base.filter(
-        category=C.ESTUDO, created_at__date__gte=grid_start
+    for created in pages_base.filter(
+        created_at__date__gte=grid_start
     ).values_list("created_at", flat=True):
         per_day[timezone.localdate(created)] += 1
 
@@ -230,7 +258,9 @@ def dashboard(request):
                 {"month": month, "label": MONTHS_ABBR_PT[month], "span": 1}
             )
 
-    # Matérias com suas anotações de estudo
+    all_pages = list(Page.objects.filter(owner=user).order_by("-created_at"))
+    
+    # Matérias com suas anotações de estudo (agora Páginas vinculadas)
     subjects = list(
         Subject.objects.filter(owner=user).prefetch_related(
             Prefetch("notes", queryset=Note.objects.order_by("-created_at"))
@@ -238,9 +268,11 @@ def dashboard(request):
     )
     for s in subjects:
         notes = list(s.notes.all())
-        s.estudo_notes = [n for n in notes if n.category == C.ESTUDO][:4]
-        s.estudo_count = sum(1 for n in notes if n.category == C.ESTUDO)
-        s.task_count = sum(1 for n in notes if n.category in (C.TRABALHO, C.PROVA))
+        # As páginas dessa matéria são as que tem subject=s (pastas) ou parent.subject=s (subpáginas)
+        subject_pages = [p for p in all_pages if p.subject_id == s.id or (p.parent_id and any(f.id == p.parent_id for f in all_pages if f.subject_id == s.id))]
+        s.estudo_notes = subject_pages[:4]
+        s.estudo_count = len(subject_pages)
+        s.task_count = len(notes)
 
     return render(request, "academics/dashboard.html", {
         "display_name": user.get_full_name() or user.username,
@@ -318,5 +350,79 @@ def calendar_view(request):
         "prev": {"year": prev_y, "month": prev_m},
         "next": {"year": next_y, "month": next_m},
         "task_count": tasks.count(),
+        "today": today,
+    })
+
+
+@login_required
+def weekly_plan(request):
+    """
+    Plano Semanal Inteligente:
+    Distribui tarefas pendentes nos próximos 7 dias com base em urgência, dificuldade e tempo disponível.
+    """
+    today = timezone.localdate()
+    
+    # Tempo disponível por dia (default: 120 minutos)
+    try:
+        available_time_per_day = int(request.GET.get("available_time", 120))
+    except ValueError:
+        available_time_per_day = 120
+
+    tasks = Note.objects.filter(
+        owner=request.user, 
+        category__in=[Note.Category.TRABALHO, Note.Category.PROVA], 
+        is_done=False
+    ).select_related("subject")
+    
+    task_list = []
+    for t in tasks:
+        days_left = max(0, (t.due_date - today).days) if t.due_date else 14
+        urgency_score = 10.0 / (days_left + 1)
+        score = urgency_score * t.difficulty
+        task_list.append({
+            "obj": t,
+            "days_left": days_left,
+            "score": score,
+            "time": t.estimated_time
+        })
+    
+    task_list.sort(key=lambda x: x["score"], reverse=True)
+    
+    days = []
+    for i in range(7):
+        date = today + timedelta(days=i)
+        days.append({
+            "date": date,
+            "weekday": WEEKDAYS_PT[(date.weekday() + 1) % 7],
+            "tasks": [],
+            "time_used": 0,
+            "time_available": available_time_per_day
+        })
+        
+    unassigned = []
+    for item in task_list:
+        assigned = False
+        for day in days:
+            if item["obj"].due_date and day["date"] > item["obj"].due_date:
+                continue
+            if day["time_used"] + item["time"] <= day["time_available"]:
+                day["tasks"].append(item["obj"])
+                day["time_used"] += item["time"]
+                assigned = True
+                break
+        
+        if not assigned:
+            valid_days = [d for d in days if not item["obj"].due_date or d["date"] <= item["obj"].due_date]
+            if valid_days:
+                best_day = min(valid_days, key=lambda d: d["time_used"])
+                best_day["tasks"].append(item["obj"])
+                best_day["time_used"] += item["time"]
+            else:
+                unassigned.append(item["obj"])
+                
+    return render(request, "academics/weekly_plan.html", {
+        "days": days,
+        "unassigned": unassigned,
+        "available_time": available_time_per_day,
         "today": today,
     })

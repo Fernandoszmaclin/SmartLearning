@@ -9,16 +9,18 @@
       <h1>Olá, {{ display_name }}</h1>
       <p class="lead">Seu panorama de estudos.</p>
     </div>
-    <a class="btn btn-secondary" href="{% url 'academic_note_create' %}">Nova anotação</a>
+    <div style="display:flex; gap:10px;">
+      <a class="btn btn-secondary" href="{% url 'academic_weekly_plan' %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+        Plano Semanal
+      </a>
+      <a class="btn btn-primary" href="{% url 'academic_note_create' %}">Nova anotação</a>
+    </div>
   </header>
 
   {% if overdue_count %}
   <div class="dash-alert" role="alert">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <path d="M12 9v4M12 17h.01"/>
-    </svg>
+    <svg class="ico" width="22" height="22" stroke-width="2" aria-hidden="true"><use href="#i-alert"/></svg>
     <div>
       <strong>{{ overdue_count }} atividade{{ overdue_count|pluralize }} atrasada{{ overdue_count|pluralize }}</strong>
       <p>Você passou da data de entrega. Resolva ou marque como terminado.</p>
@@ -35,20 +37,20 @@
   {% endif %}
 
   <section class="dash-stats" aria-label="Resumo de anotações">
-    <a class="stat-card stat-estudo" href="{% url 'academic_notes' %}?category=estudo&all=1">
+    <a class="stat-card stat-estudo" href="{% url 'workspace' %}">
       <span class="stat-label">Estudo</span>
       <strong class="stat-num">{{ counts.estudo }}</strong>
-      <span class="stat-sub">ver todas <span aria-hidden="true">→</span></span>
+      <span class="stat-sub">abrir workspace <span aria-hidden="true">→</span></span>
     </a>
-    <a class="stat-card stat-prova" href="{% url 'academic_notes' %}?category=prova&all=1">
+    <a class="stat-card stat-prova" href="{% url 'workspace' %}?tasks=open">
       <span class="stat-label">Provas</span>
       <strong class="stat-num">{{ counts.prova }}</strong>
-      <span class="stat-sub">ver todas <span aria-hidden="true">→</span></span>
+      <span class="stat-sub">ver anotações <span aria-hidden="true">→</span></span>
     </a>
-    <a class="stat-card stat-trabalho" href="{% url 'academic_notes' %}?category=trabalho&all=1">
+    <a class="stat-card stat-trabalho" href="{% url 'workspace' %}?tasks=open">
       <span class="stat-label">Trabalhos</span>
       <strong class="stat-num">{{ counts.trabalho }}</strong>
-      <span class="stat-sub">ver todas <span aria-hidden="true">→</span></span>
+      <span class="stat-sub">ver anotações <span aria-hidden="true">→</span></span>
     </a>
     <article class="stat-card">
       <span class="stat-label">Total</span>
@@ -131,14 +133,14 @@
         </a>
         {% if s.estudo_notes %}
         <ul class="subject-note-mini">
-          {% for n in s.estudo_notes %}
-          <li><a href="{% url 'academic_note_edit' n.pk %}">{{ n.title }}</a></li>
+          {% for p in s.estudo_notes %}
+          <li><a href="{% url 'workspace_page' p.pk %}">{{ p.display_title }}</a></li>
           {% endfor %}
         </ul>
         {% else %}
         <p class="dash-empty">Sem anotações de estudo ainda.</p>
         {% endif %}
-        <a class="subject-more" href="{% url 'academic_notes' %}?subject={{ s.id }}">Ver anotações</a>
+        <a class="subject-more" href="{% url 'subject_detail' s.id %}">Ver matéria</a>
       </article>
       {% endfor %}
     </div>

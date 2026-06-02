@@ -11,106 +11,121 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body class="app is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
+  {% include "_icons.html" %}
   <div class="grain" aria-hidden="true"></div>
   <a class="skip-link" href="#app-main">Pular para o conteúdo</a>
 
   {% with un=request.resolver_match.url_name %}
   <header class="app-bar glass">
     <div class="app-bar-inner">
-      <a class="brand" href="{% url 'workspace' %}">
-        <svg class="mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-        </svg>
+      <span class="brand is-logo">
+        <svg class="mark ico" width="24" height="24" stroke-width="2" aria-hidden="true"><use href="#i-cap"/></svg>
         <span class="brand-text">SmartLearning</span>
-      </a>
+      </span>
 
       <nav class="app-nav" aria-label="Seções">
         <a href="{% url 'dashboard' %}" {% if un == 'dashboard' %}class="is-active"{% endif %}>Minha área</a>
         <a href="{% url 'workspace' %}" {% if un == 'workspace' or un == 'workspace_page' %}class="is-active"{% endif %}>Workspace</a>
-        <a href="{% url 'academic_notes' %}" {% if un == 'academic_notes' or un == 'academic_note_create' or un == 'academic_note_edit' %}class="is-active"{% endif %}>Estudos</a>
         <a href="{% url 'academic_calendar' %}" {% if un == 'academic_calendar' %}class="is-active"{% endif %}>Calendário</a>
         <a href="{% url 'course_list' %}" {% if un == 'course_list' or un == 'course_create' or un == 'subject_detail' or un == 'subject_edit' %}class="is-active"{% endif %}>Matérias</a>
       </nav>
 
       <div class="app-bar-right">
-        <button class="icon-btn" type="button" data-pomo-toggle title="Pomodoro" aria-label="Mostrar/ocultar Pomodoro">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6M19 5l1.5-1.5"/></svg>
-        </button>
-        <details class="user-menu">
-          <summary>
-            <span class="user-avatar">
-              {% if active_profile.photo %}
-                <img src="{{ active_profile.photo.url }}" alt="">
-              {% else %}
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-              {% endif %}
-            </span>
-            {{ request.user.get_full_name|default:request.user.username }}
-          </summary>
-          <div class="user-pop">
-            <a href="{% url 'profile_edit' %}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              Editar perfil
-            </a>
-            <form method="post" action="{% url 'profile_toggle_theme' %}">
-              {% csrf_token %}
-              <input type="hidden" name="next" value="{{ request.get_full_path|default:'/app/' }}">
-              <button type="submit">
-                {% if active_profile.theme == 'dark' %}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-                  </svg>
-                {% else %}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 3a6 6 0 0 0 9 7.3A9 9 0 1 1 12 3z"/>
-                  </svg>
-                {% endif %}
-                {% if active_profile.theme == 'dark' %}Modo claro{% else %}Modo escuro{% endif %}
-              </button>
-            </form>
-            <a href="{% url 'landing' %}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>
-              </svg>
-              Página inicial
-            </a>
-            {% if request.user.is_staff %}
-              <a href="/admin/">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Admin
-              </a>
-            {% endif %}
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button type="submit" class="danger">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
-                </svg>
-                Sair
-              </button>
-            </form>
+        <div class="header-search-wrapper" id="header-search-wrapper">
+          <form class="app-search" role="search" method="get" action="{% url 'search' %}">
+            <svg class="ico" width="14" height="14" stroke-width="2" aria-hidden="true"><use href="#i-search"/></svg>
+            <input type="search" id="header-search-input" name="q" value="{{ request.GET.q|default:'' }}"
+                   placeholder="Buscar tudo…" aria-label="Buscar anotações, páginas e matérias" autocomplete="off">
+            <div class="header-search-kbd">Ctrl K</div>
+          </form>
+          <div class="header-search-dropdown" id="header-search-dropdown">
+            <div id="header-search-results"></div>
           </div>
-        </details>
+        </div>
+
+        <button class="icon-btn" type="button" data-pomo-toggle title="Pomodoro" aria-label="Mostrar/ocultar Pomodoro">
+          <svg class="ico" width="20" height="20" stroke-width="2"><use href="#i-pomodoro"/></svg>
+        </button>
+        <!-- ================= FLUID USER MENU ================= -->
+        <div class="fluid-menu-container" id="user-fluid-menu">
+          <!-- Logout -->
+          <a href="#" class="fluid-item fluid-child" style="--i: {% if request.user.is_staff %}5{% else %}4{% endif %}" title="Sair" onclick="event.preventDefault(); document.getElementById('logout-form-fluid').submit();">
+            <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-logout"/></svg>
+          </a>
+          <form id="logout-form-fluid" method="post" action="{% url 'logout' %}" style="display:none;">{% csrf_token %}</form>
+
+          <!-- Admin -->
+          {% if request.user.is_staff %}
+          <a href="/admin/" class="fluid-item fluid-child" style="--i: 4" title="Admin">
+            <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-shield"/></svg>
+          </a>
+          {% endif %}
+
+          <!-- Home -->
+          <a href="{% url 'landing' %}" class="fluid-item fluid-child" style="--i: 3" title="Página inicial">
+            <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-home"/></svg>
+          </a>
+
+          <!-- Theme -->
+          <form method="post" action="{% url 'profile_toggle_theme' %}" class="fluid-child-form fluid-child" style="--i: 2">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path|default:'/academico/workspace/' }}">
+            <button type="submit" class="fluid-item w-full h-full" title="Alternar Tema">
+              {% if active_profile.theme == 'dark' %}
+                <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-sun"/></svg>
+              {% else %}
+                <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-moon"/></svg>
+              {% endif %}
+            </button>
+          </form>
+
+          <!-- Settings -->
+          <a href="{% url 'profile_edit' %}" class="fluid-item fluid-child" style="--i: 1" title="Editar perfil">
+            <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-user"/></svg>
+          </a>
+
+          <!-- Trigger -->
+          <div class="fluid-trigger" id="fluid-menu-trigger">
+            {% if active_profile.photo %}
+              <img src="{{ active_profile.photo.url }}" alt="">
+            {% else %}
+              <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-user"/></svg>
+            {% endif %}
+            <div class="fluid-x">
+              <svg class="ico" width="20" height="20" stroke-width="2"><use href="#i-close"/></svg>
+            </div>
+          </div>
+        </div>
+        <!-- ================= /FLUID USER MENU ================= -->
       </div>
     </div>
   </header>
   {% endwith %}
+
+  <!-- ================= COMMAND PALETTE (CTRL+K) ================= -->
+  <div class="cmd-palette-backdrop" id="cmd-backdrop"></div>
+  <div class="cmd-palette" id="cmd-palette" role="dialog" aria-modal="true">
+    <div class="cmd-inner">
+      <div class="cmd-header">
+        <svg class="cmd-search-icon ico" width="24" height="24" stroke-width="1.5"><use href="#i-search"/></svg>
+        <input type="text" id="cmd-input" class="cmd-input" placeholder="Comando ou busca global..." autocomplete="off" spellcheck="false">
+        <div class="cmd-esc" id="cmd-close">ESC</div>
+      </div>
+      <div class="cmd-body">
+        <div id="cmd-results" class="cmd-results">
+          <!-- Results will be injected here via JS -->
+          <div class="cmd-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3; margin: 0 auto 16px;">
+              <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </svg>
+            <p>O que você deseja encontrar hoje?</p>
+            <span style="font-size: 0.75rem; opacity: 0.5;">Busque por matérias, trabalhos, provas ou páginas do workspace.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ================= /COMMAND PALETTE ================= -->
 
   <main id="app-main" class="app-body {% block body_class %}padded{% endblock %}">
     {% block app %}{% endblock %}
@@ -121,5 +136,294 @@
   <script src="{% static 'js/reveal.js' %}"></script>
   <script src="{% static 'js/pomodoro.js' %}"></script>
   {% block extra_js %}{% endblock %}
+
+
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ---- 0. FLUID MENU TOGGLE ----
+    const fluidTrigger = document.getElementById('fluid-menu-trigger');
+    const fluidContainer = document.getElementById('user-fluid-menu');
+    if (fluidTrigger && fluidContainer) {
+      fluidTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fluidContainer.classList.toggle('is-expanded');
+      });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#user-fluid-menu')) {
+          fluidContainer.classList.remove('is-expanded');
+        }
+      });
+    }
+
+    // ---- 1. HEADER INTEGRATED SEARCH ----
+    const headerInput = document.getElementById('header-search-input');
+    const headerDropdown = document.getElementById('header-search-dropdown');
+    const headerResults = document.getElementById('header-search-results');
+    let headerTimeout = null;
+
+    // Ctrl+K to open Command Palette
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openCmdPalette();
+      }
+    });
+
+    const cmdPalette = document.getElementById('cmd-palette');
+    const cmdBackdrop = document.getElementById('cmd-backdrop');
+    const cmdInput = document.getElementById('cmd-input');
+    const cmdClose = document.getElementById('cmd-close');
+    const cmdResults = document.getElementById('cmd-results');
+    let cmdTimeout = null;
+
+    function openCmdPalette() {
+      if (!cmdPalette) return;
+      cmdPalette.classList.add('is-open');
+      cmdBackdrop.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        if (cmdInput) cmdInput.focus();
+      }, 50);
+    }
+
+    function closeCmdPalette() {
+      if (!cmdPalette) return;
+      cmdPalette.classList.remove('is-open');
+      cmdBackdrop.classList.remove('is-open');
+      document.body.style.overflow = '';
+      if (cmdInput) {
+        cmdInput.value = '';
+        cmdResults.innerHTML = `
+          <div class="cmd-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3; margin: 0 auto 16px;">
+              <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </svg>
+            <p>O que você deseja encontrar hoje?</p>
+            <span style="font-size: 0.75rem; opacity: 0.5;">Busque por matérias, trabalhos, provas ou páginas do workspace.</span>
+          </div>`;
+      }
+    }
+
+    if (cmdBackdrop) cmdBackdrop.addEventListener('click', closeCmdPalette);
+    if (cmdClose) cmdClose.addEventListener('click', closeCmdPalette);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && cmdPalette && cmdPalette.classList.contains('is-open')) {
+        closeCmdPalette();
+      }
+    });
+
+    if (cmdInput) {
+      cmdInput.addEventListener('input', () => {
+        const q = cmdInput.value.trim();
+        if (q.length > 0) {
+          cmdResults.innerHTML = '<div class="cmd-loading">Buscando...</div>';
+          clearTimeout(cmdTimeout);
+          cmdTimeout = setTimeout(() => performCmdSearch(q), 300);
+        } else {
+          closeCmdPalette();
+          setTimeout(openCmdPalette, 10); // reset state without closing modal visually completely
+        }
+      });
+
+      cmdInput.addEventListener('keydown', (e) => {
+        const items = Array.from(cmdResults.querySelectorAll('.cmd-item, .cmd-more'));
+        if (!items.length) return;
+
+        let currentIndex = items.findIndex(item => item.classList.contains('is-selected'));
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (currentIndex >= 0) items[currentIndex].classList.remove('is-selected');
+          currentIndex = (currentIndex + 1) % items.length;
+          items[currentIndex].classList.add('is-selected');
+          items[currentIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (currentIndex >= 0) items[currentIndex].classList.remove('is-selected');
+          currentIndex = (currentIndex - 1 + items.length) % items.length;
+          items[currentIndex].classList.add('is-selected');
+          items[currentIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+          if (currentIndex >= 0) {
+            e.preventDefault();
+            items[currentIndex].click();
+          }
+        }
+      });
+    }
+
+    async function performCmdSearch(q) {
+      try {
+        const url = `{% url 'search' %}?q=${encodeURIComponent(q)}&format=json`;
+        const res = await fetch(url);
+        const data = await res.json();
+        renderCmdResults(data, q);
+      } catch (err) {
+        console.error("Cmd Search error", err);
+      }
+    }
+
+    function renderCmdResults(data, q) {
+      if (data.total === 0) {
+        cmdResults.innerHTML = `<div class="cmd-empty-state"><p>Nenhum resultado para "${q}"</p></div>`;
+        return;
+      }
+      
+      let html = '';
+      
+      const renderGroup = (title, items) => {
+        if (!items || !items.length) return '';
+        let groupHtml = `<div class="cmd-group"><div class="cmd-group-title">${title}</div>`;
+        items.slice(0, 5).forEach(item => {
+          let iconHtml = '';
+          if (item.color) {
+            iconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:${item.color}"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`;
+          } else if (item.icon) {
+            iconHtml = `<span style="font-size:1.2rem; line-height:1;">${item.icon}</span>`;
+          } else if (item.category_value === 'prova') {
+            iconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>`;
+          } else if (item.category_value === 'trabalho') {
+            iconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#eab308"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+          } else {
+            iconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+          }
+
+          groupHtml += `
+            <a href="${item.url}" class="cmd-item">
+              <div class="cmd-item-icon">${iconHtml}</div>
+              <div class="cmd-item-info">
+                <span class="cmd-item-title">${item.title || item.name}</span>
+                <span class="cmd-item-desc">${item.subject || item.professor || item.category || 'Workspace'}</span>
+              </div>
+              <div class="cmd-item-action">
+                <span>Enter</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10L4 15L9 20"/><path d="M20 4V11C20 13.2091 18.2091 15 16 15H4"/></svg>
+              </div>
+            </a>`;
+        });
+        groupHtml += `</div>`;
+        return groupHtml;
+      };
+
+      html += renderGroup('Matérias', data.subjects);
+      html += renderGroup('Workspace (Páginas)', data.pages);
+      html += renderGroup('Anotações (Provas/Trabalhos)', data.notes);
+      
+      html += `<a href="{% url 'search' %}?q=${encodeURIComponent(q)}" class="cmd-more">Ver todos os ${data.total} resultados...</a>`;
+      cmdResults.innerHTML = html;
+    }
+
+    if (headerInput && headerDropdown) {
+      headerInput.addEventListener('input', () => {
+        const q = headerInput.value.trim();
+        if (q.length > 0) {
+          headerDropdown.classList.add('is-open');
+          headerResults.innerHTML = '<div class="header-search-empty">Buscando...</div>';
+          clearTimeout(headerTimeout);
+          headerTimeout = setTimeout(() => performHeaderSearch(q), 300);
+        } else {
+          headerDropdown.classList.remove('is-open');
+        }
+      });
+
+      headerInput.addEventListener('focus', () => {
+        if (headerInput.value.trim().length > 0) {
+          headerDropdown.classList.add('is-open');
+        }
+      });
+
+      headerInput.addEventListener('keydown', (e) => {
+        if (!headerDropdown.classList.contains('is-open')) return;
+        const items = Array.from(headerResults.querySelectorAll('.header-search-item, .header-search-more'));
+        if (!items.length) return;
+
+        let currentIndex = items.findIndex(item => item.classList.contains('is-selected'));
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (currentIndex >= 0) items[currentIndex].classList.remove('is-selected');
+          currentIndex = (currentIndex + 1) % items.length;
+          items[currentIndex].classList.add('is-selected');
+          items[currentIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (currentIndex >= 0) items[currentIndex].classList.remove('is-selected');
+          currentIndex = (currentIndex - 1 + items.length) % items.length;
+          items[currentIndex].classList.add('is-selected');
+          items[currentIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+          if (currentIndex >= 0) {
+            e.preventDefault();
+            items[currentIndex].click();
+          }
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#header-search-wrapper')) {
+          headerDropdown.classList.remove('is-open');
+        }
+      });
+
+      async function performHeaderSearch(q) {
+        try {
+          const url = `{% url 'search' %}?q=${encodeURIComponent(q)}&format=json`;
+          const res = await fetch(url);
+          const data = await res.json();
+          renderHeaderResults(data, q);
+        } catch (err) {
+          console.error("Header Search error", err);
+        }
+      }
+
+      function renderHeaderResults(data, q) {
+        if (data.total === 0) {
+          headerResults.innerHTML = `<div class="header-search-empty">Nenhum resultado para "${q}"</div>`;
+          return;
+        }
+        
+        let html = '<ul class="header-search-list">';
+        // Merge notes and pages into one list for quick search
+        const allItems = [...(data.notes || []), ...(data.pages || []), ...(data.subjects || [])].slice(0, 6);
+        allItems.forEach(item => {
+          let iconHtml = '';
+          if (item.color) {
+            // Subject
+            iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:${item.color}"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`;
+          } else if (item.icon) {
+            // Page
+            iconHtml = `<span style="display: flex; align-items: center; justify-content: center; font-size: 0.85rem; width: 100%; height: 100%; line-height: normal;">${item.icon}</span>`;
+          } else if (item.category_value === 'prova') {
+            iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>`;
+          } else if (item.category_value === 'trabalho') {
+            iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#eab308"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+          } else {
+            iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+          }
+
+          html += `
+            <li class="header-search-item" onclick="window.location.href='${item.url}'">
+              <span class="hs-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;">${iconHtml}</span>
+              <div class="hs-info">
+                <span class="hs-title">${item.title || item.name}</span>
+                <span class="hs-desc">${item.subject || item.professor || item.category || 'Workspace'}</span>
+              </div>
+              <div class="hs-action" style="margin-left:auto; color:var(--color-text-soft);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </div>
+            </li>`;
+        });
+        html += '</ul>';
+        html += `<a href="{% url 'search' %}?q=${encodeURIComponent(q)}" class="header-search-more">Ver todos os ${data.total} resultados...</a>`;
+        headerResults.innerHTML = html;
+      }
+    }
+
+
+
+  });
+  </script>
 </body>
 </html>

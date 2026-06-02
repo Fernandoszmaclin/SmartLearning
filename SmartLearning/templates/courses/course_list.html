@@ -68,11 +68,17 @@
           </div>
 
           <footer class="subject-actions">
-            <a href="{% url 'subject_edit' subject.id %}">Editar</a>
+            <a href="{% url 'subject_edit' subject.id %}" class="action-icon-btn" title="Editar matéria">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Editar
+            </a>
             <form method="post" action="{% url 'course_delete' subject.id %}"
                   onsubmit="return confirm('Remover esta matéria? As anotações ficam sem matéria.');">
               {% csrf_token %}
-              <button type="submit" class="link-danger">Remover</button>
+              <button type="submit" class="action-icon-btn danger" title="Remover matéria">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                Remover
+              </button>
             </form>
           </footer>
         </article>

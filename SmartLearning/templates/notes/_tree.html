@@ -1,23 +1,34 @@
 {% load static %}
 <ul class="tree">
   {% for page in pages %}
-    <li class="tree-item">
-      <div class="tree-row {% if current and page.id == current.id %}is-active{% endif %}">
+    {% with children=page.children.all %}
+    <li class="tree-item{% if children %} has-children{% endif %}" data-page-id="{{ page.id }}">
+      <div class="tree-row {% if current and page.id == current.id %}is-active{% endif %}"
+           data-page-id="{{ page.id }}" draggable="true">
+        {% if children %}
+          <button class="tree-toggle" type="button" data-tree-toggle aria-expanded="true"
+                  title="Recolher ou expandir" aria-label="Recolher ou expandir subpáginas">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        {% else %}
+          <span class="tree-toggle is-leaf" aria-hidden="true"></span>
+        {% endif %}
         <a class="tree-link" href="{% url 'workspace_page' page.id %}">
+          {% if page.subject %}<span class="tree-dot" style="background: {{ page.subject.color }};" title="{{ page.subject.name }}"></span>{% endif %}
           <span class="tree-icon">{{ page.icon }}</span>
           <span class="tree-title">{{ page.display_title }}</span>
         </a>
         <button class="tree-add" type="button" title="Adicionar subpágina"
                 data-add-child="{{ page.id }}" aria-label="Adicionar subpágina">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       </div>
-      {% with children=page.children.all %}
-        {% if children %}
-          {% include "notes/_tree.html" with pages=children current=current %}
-        {% endif %}
-      {% endwith %}
+      {% if children %}
+        {% include "notes/_tree.html" with pages=children current=current %}
+      {% endif %}
     </li>
+    {% endwith %}
   {% endfor %}
 </ul>
