@@ -118,7 +118,7 @@
   <section class="dash-subjects">
     <div class="dash-section-head">
       <h2>Minhas matérias</h2>
-      <a href="{% url 'course_list' %}">Ver todas</a>
+      <a href="{% url 'subject_list' %}">Ver todas</a>
     </div>
     {% if subjects %}
     <div class="subject-grid">
@@ -148,9 +148,10 @@
     <div class="empty-state">
       <h3>Nenhuma matéria ainda</h3>
       <p>Crie matérias para organizar seus estudos por cadeira.</p>
-      <a class="btn btn-primary" href="{% url 'course_list' %}">Adicionar matéria</a>
+      <a class="btn btn-primary" href="{% url 'subject_list' %}">Adicionar matéria</a>
     </div>
     {% endif %}
   </section>
 </div>
 {% endblock %}
+
