@@ -458,7 +458,7 @@ def _notes_for_subject(subject, sort):
 
 @login_required
 def subject_list(request):
-    return render(request, "courses/subject_list.html", {
+    return render(request, "academics/subject_list.html", {
         "subjects": _subject_queryset(request.user),
         "subject_form": SubjectForm(),
     })

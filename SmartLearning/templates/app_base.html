@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}SmartLearning{% endblock %}</title>
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=2">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="app is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
@@ -69,7 +69,7 @@
           <!-- Theme -->
           <form method="post" action="{% url 'profile_toggle_theme' %}" class="fluid-child-form fluid-child" style="--i: 2">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ request.get_full_path|default:'/academico/workspace/' }}">
+            <input type="hidden" name="next" value="{{ request.get_full_path|default:'/workspace/' }}">
             <button type="submit" class="fluid-item w-full h-full" title="Alternar Tema">
               {% if active_profile.theme == 'dark' %}
                 <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-sun"/></svg>

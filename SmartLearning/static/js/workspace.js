@@ -44,13 +44,13 @@
   }
 
   const pane = document.getElementById("editor-pane");
-  const PAGES_URL = pane ? pane.dataset.apiPages : "/academico/workspace/api/pages/";
+  const PAGES_URL = pane ? pane.dataset.apiPages : "/workspace/api/pages/";
   const pageId = pane && pane.dataset.pageId ? pane.dataset.pageId : null;
 
   const pageUrl = (id) => PAGES_URL + id + "/";
   const blocksUrl = (id) => PAGES_URL + id + "/blocks/";
   const reorderUrl = (id) => PAGES_URL + id + "/reorder/";
-  const blockUrl = (id) => "/academico/workspace/api/blocks/" + id + "/";
+  const blockUrl = (id) => "/workspace/api/blocks/" + id + "/";
   const moveUrl = (id) => PAGES_URL + id + "/move/";
 
   async function createPage(parent, title, icon) {
@@ -59,7 +59,7 @@
     if (title) payload.title = title;
     if (icon) payload.icon = icon;
     const data = await api(PAGES_URL, "POST", payload);
-    window.location.href = "/academico/workspace/p/" + data.id + "/";
+    window.location.href = "/workspace/p/" + data.id + "/";
   }
 
   const inlineNewBtn = document.getElementById("inline-new-page");
@@ -656,7 +656,7 @@
       try { 
         await api(pageUrl(targetId), "DELETE"); 
         if (targetId === pageId) {
-          window.location.href = "/academico/workspace/"; 
+          window.location.href = "/workspace/"; 
         } else {
           window.location.reload(); // Deletou outra pagina pela sidebar
         }

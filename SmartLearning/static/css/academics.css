@@ -10,7 +10,6 @@
 }
 
 .ac-page { padding-block: var(--space-xl) var(--space-3xl); }
-.ac-page .empty-state p { margin-inline: auto; }
 
 /* ---------- Professor Preview ---------- */
 .missing-prof {
