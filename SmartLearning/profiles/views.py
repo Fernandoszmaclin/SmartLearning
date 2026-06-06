@@ -16,6 +16,9 @@ def profile_edit(request):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
+            next_url = request.POST.get("next")
+            if next_url:
+                return redirect(next_url)
             return redirect("profile_edit")
     else:
         user_form = UserProfileForm(instance=request.user)

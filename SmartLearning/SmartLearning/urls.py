@@ -14,8 +14,8 @@ urlpatterns = [
     path('busca/', views.search, name='search'),
 
     # Autenticao (login, logout, password_reset, etc.)
-    path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/signup/', views.signup, name='signup'),
+    path('accounts/', include('django.contrib.auth.urls')),
 
     # Perfis
     path('perfil/', include('profiles.urls')),
@@ -23,16 +23,17 @@ urlpatterns = [
     # Workspace principal (Notion-like)
     path('workspace/', include('notes.urls')),
 
+    # Redirecionamentos de rotas antigas
+    path('courses/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
+    path('academico/estudos/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
+    path('materias/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
+
     # Apps acadmicos / matrias
     path('academico/', include('academics.urls')),             # anotaes, minha-rea, calendrio, matrias
 
     # Pomodoro nativo
     path('pomodoro/', include('pomodoro.urls')),
 
-    # Redirecionamentos de rotas antigas
-    path('courses/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
-    path('academico/estudos/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
-    path('materias/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
 
     path('admin/', admin.site.urls),
 ]

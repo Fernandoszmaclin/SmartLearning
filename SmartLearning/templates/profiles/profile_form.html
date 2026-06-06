@@ -24,49 +24,58 @@
 
     <form method="post" enctype="multipart/form-data" class="profile-form">
       {% csrf_token %}
+      {% if request.GET.next %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}">
+      {% endif %}
       {% if user_form.non_field_errors %}<div class="form-error">{{ user_form.non_field_errors }}</div>{% endif %}
       {% if profile_form.non_field_errors %}<div class="form-error">{{ profile_form.non_field_errors }}</div>{% endif %}
 
-      <div class="ac-form-row">
+      <div class="form-section">
+        <h3 class="form-section-title">Informações Pessoais</h3>
+        <div class="ac-form-row">
+          <label class="field">
+            <span>Nome</span>
+            {{ user_form.first_name }}
+            {% for e in user_form.first_name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+          </label>
+          <label class="field">
+            <span>Sobrenome</span>
+            {{ user_form.last_name }}
+            {% for e in user_form.last_name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+          </label>
+        </div>
+
         <label class="field">
-          <span>Nome</span>
-          {{ user_form.first_name }}
-          {% for e in user_form.first_name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
-        </label>
-        <label class="field">
-          <span>Sobrenome</span>
-          {{ user_form.last_name }}
-          {% for e in user_form.last_name.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+          <span>Email</span>
+          {{ user_form.email }}
+          {% for e in user_form.email.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
         </label>
       </div>
 
-      <label class="field">
-        <span>Email</span>
-        {{ user_form.email }}
-        {% for e in user_form.email.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
-      </label>
+      <div class="form-section">
+        <h3 class="form-section-title">Personalização</h3>
+        <label class="field">
+          <span>Foto</span>
+          {{ profile_form.photo }}
+          {% for e in profile_form.photo.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
 
-      <label class="field">
-        <span>Foto</span>
-        {{ profile_form.photo }}
-        {% for e in profile_form.photo.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
-      </label>
+        <label class="field">
+          <span>Bio</span>
+          {{ profile_form.bio }}
+          {% for e in profile_form.bio.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
 
-      <label class="field">
-        <span>Bio</span>
-        {{ profile_form.bio }}
-        {% for e in profile_form.bio.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
-      </label>
+        <label class="field">
+          <span>Tema</span>
+          {{ profile_form.theme }}
+          {% for e in profile_form.theme.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
+        </label>
+      </div>
 
-      <label class="field">
-        <span>Tema</span>
-        {{ profile_form.theme }}
-        {% for e in profile_form.theme.errors %}<small class="form-error">{{ e }}</small>{% endfor %}
-      </label>
-
-      <div class="ac-form-actions">
+      <div class="ac-form-actions" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--color-muted);">
         <button class="btn btn-primary" type="submit">Salvar perfil</button>
-        <a class="btn btn-secondary" href="{% url 'workspace' %}">Cancelar</a>
+        <a class="btn btn-secondary" href="{{ request.GET.next|default:request.META.HTTP_REFERER|default:'/workspace/' }}">Cancelar</a>
       </div>
     </form>
   </div>

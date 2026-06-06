@@ -80,7 +80,7 @@
           </form>
 
           <!-- Settings -->
-          <a href="{% url 'profile_edit' %}" class="fluid-item fluid-child" style="--i: 1" title="Editar perfil">
+          <a href="{% url 'profile_edit' %}?next={{ request.get_full_path|urlencode }}" class="fluid-item fluid-child" style="--i: 1" title="Editar perfil">
             <svg class="ico" width="20" height="20" stroke-width="1.5"><use href="#i-user"/></svg>
           </a>
 

@@ -53,13 +53,20 @@
   const blockUrl = (id) => "/workspace/api/blocks/" + id + "/";
   const moveUrl = (id) => PAGES_URL + id + "/move/";
 
-  async function createPage(parent, title, icon) {
+  async function createPage(parent, title, icon, is_folder=false) {
     const payload = {};
     if (parent) payload.parent = parent;
     if (title) payload.title = title;
     if (icon) payload.icon = icon;
-    const data = await api(PAGES_URL, "POST", payload);
-    window.location.href = "/workspace/p/" + data.id + "/";
+    if (is_folder) payload.is_folder = true;
+    
+    try {
+      const data = await api(PAGES_URL, "POST", payload);
+      window.location.href = "/workspace/p/" + data.id + "/";
+    } catch (err) {
+      alert("Erro ao criar: " + err.message);
+      console.error(err);
+    }
   }
 
   const inlineNewBtn = document.getElementById("inline-new-page");
@@ -80,12 +87,23 @@
       
       if (treeRow) {
         ctxTargetPageId = treeRow.getAttribute("data-page-id");
+        const isFolder = treeRow.getAttribute("data-is-folder") === "true";
         if (ctxDivider) ctxDivider.style.display = "block";
         if (ctxDelete) ctxDelete.style.display = "flex";
+        
+        const ctxNewPage = document.getElementById("ctx-new-page");
+        const ctxNewFolder = document.getElementById("ctx-new-folder");
+        if (ctxNewPage) ctxNewPage.style.display = isFolder ? "flex" : "none";
+        if (ctxNewFolder) ctxNewFolder.style.display = isFolder ? "flex" : "none";
+        
       } else {
         ctxTargetPageId = null;
         if (ctxDivider) ctxDivider.style.display = "none";
         if (ctxDelete) ctxDelete.style.display = "none";
+        const ctxNewPage = document.getElementById("ctx-new-page");
+        const ctxNewFolder = document.getElementById("ctx-new-folder");
+        if (ctxNewPage) ctxNewPage.style.display = "flex";
+        if (ctxNewFolder) ctxNewFolder.style.display = "flex";
       }
       
       ctxMenu.style.display = "flex";
@@ -108,7 +126,7 @@
     const ctxNewFolder = document.getElementById("ctx-new-folder");
     if (ctxNewFolder) ctxNewFolder.addEventListener("click", () => {
       ctxMenu.style.display = "none";
-      createPage(ctxTargetPageId, "Nova Pasta", "📁");
+      createPage(ctxTargetPageId, "Nova Pasta", "📁", true);
     });
     
     const ctxDelete = document.getElementById("ctx-delete-page");
@@ -200,8 +218,11 @@
       if (row) {
         const item = row.closest(".tree-item");
         if (item === draggedItem || (draggedItem && draggedItem.contains(item))) return;
+        const isFolder = row.getAttribute("data-is-folder") === "true";
+        const zone = zoneFor(row, e);
+        if (zone === "inside" && !isFolder) return;
         e.preventDefault();
-        row.classList.add("dnd-" + zoneFor(row, e));
+        row.classList.add("dnd-" + zone);
       } else {
         const scroll = e.target.closest && e.target.closest(".sidebar-scroll");
         if (scroll) { e.preventDefault(); scroll.classList.add("dnd-root"); }
@@ -222,7 +243,11 @@
         if (item === draggedItem || (draggedItem && draggedItem.contains(item))) { clearMarks(); return; }
         const zone = zoneFor(row, e);
         const targetId = row.dataset.pageId;
-        if (zone === "inside") { clearMarks(); doMove({ parent: targetId }); return; }
+        const isFolder = row.getAttribute("data-is-folder") === "true";
+        if (zone === "inside") { 
+          if (!isFolder) { clearMarks(); return; }
+          clearMarks(); doMove({ parent: targetId }); return; 
+        }
         const parentUl = item.parentElement;
         const parentItem = parentUl.closest(".tree-item");
         const parentId = parentItem

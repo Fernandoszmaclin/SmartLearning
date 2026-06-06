@@ -6,6 +6,24 @@
   document.body.classList.remove("is-loading");
   document.body.classList.add("is-ready");
 
+  // The hero video is muted ambient brand texture and is requested to always
+  // play. Most browsers autoplay muted video, but some (strict mobile policies,
+  // automation) hold the first frame. Nudge it on load and once more when it is
+  // ready; as a last resort, start it on the first user interaction. On total
+  // failure the poster frame stays as a graceful fallback.
+  var heroVideo = document.querySelector(".video-hero-media");
+  if (heroVideo) {
+    var playHero = function () {
+      if (!heroVideo.paused) return;
+      var p = heroVideo.play();
+      if (p && typeof p.catch === "function") { p.catch(function () {}); }
+    };
+    playHero();
+    heroVideo.addEventListener("canplay", playHero, { once: true });
+    window.addEventListener("pointerdown", playHero, { once: true, passive: true });
+    window.addEventListener("touchstart", playHero, { once: true, passive: true });
+  }
+
   // staggered delays inside [data-stagger] containers
   document.querySelectorAll("[data-stagger]").forEach(function (c) {
     var step = parseInt(c.getAttribute("data-stagger"), 10) || 70;
@@ -24,61 +42,6 @@
       });
     }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
     els.forEach(function (el) { io.observe(el); });
-  }
-
-  // WAAPI: animated home preview. Native, finite, paused-safe enough for normal site UI.
-  var film = document.querySelector("[data-home-film]");
-  if (film && !reduced && "animate" in Element.prototype) {
-    var note = film.querySelector(".film-note");
-    var task = film.querySelector(".film-task");
-    var focus = film.querySelector(".film-focus");
-    var days = film.querySelectorAll(".film-calendar span");
-    var floatTargets = [note, task, focus].filter(Boolean);
-
-    floatTargets.forEach(function (el, i) {
-      el.animate(
-        [
-          { transform: "translate3d(0, 0, 0)" },
-          { transform: "translate3d(0, " + (i === 1 ? -10 : 10) + "px, 0)" },
-          { transform: "translate3d(0, 0, 0)" }
-        ],
-        {
-          duration: 3600 + (i * 460),
-          delay: i * 140,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-          fill: "both",
-          iterations: 3
-        }
-      );
-    });
-
-    Array.prototype.forEach.call(days, function (day, i) {
-      day.animate(
-        [
-          { transform: "scale(0.86)", opacity: 0.58 },
-          { transform: "scale(1.08)", opacity: 1 },
-          { transform: "scale(1)", opacity: 0.9 }
-        ],
-        {
-          duration: 1200,
-          delay: 520 + (i * 95),
-          easing: "cubic-bezier(0.34, 1.4, 0.64, 1)",
-          fill: "both",
-          iterations: 2
-        }
-      );
-    });
-
-    if (focus) {
-      focus.animate(
-        [
-          { boxShadow: "0 20px 42px -26px rgba(19,78,74,0.42)" },
-          { boxShadow: "0 22px 52px -18px rgba(234,88,12,0.38)" },
-          { boxShadow: "0 20px 42px -26px rgba(19,78,74,0.42)" }
-        ],
-        { duration: 2600, delay: 420, easing: "ease-in-out", fill: "both", iterations: 3 }
-      );
-    }
   }
 
   // App/list entrance polish for pages that already render content server-side.
@@ -126,23 +89,6 @@
 
   // Interactive enhancements — pointer-driven, skipped under reduced motion / touch
   if (!reduced && window.matchMedia && window.matchMedia("(pointer: fine)").matches) {
-    // 3D tilt on the hero preview (follows the cursor, eases back on leave)
-    var tiltEl = document.querySelector("[data-home-film]");
-    if (tiltEl) {
-      var MAX_TILT = 6;
-      tiltEl.addEventListener("pointermove", function (e) {
-        var r = tiltEl.getBoundingClientRect();
-        var rx = ((e.clientY - r.top) / r.height - 0.5) * -MAX_TILT;
-        var ry = ((e.clientX - r.left) / r.width - 0.5) * MAX_TILT;
-        tiltEl.style.transition = "transform 90ms ease-out";
-        tiltEl.style.transform = "perspective(1000px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg)";
-      });
-      tiltEl.addEventListener("pointerleave", function () {
-        tiltEl.style.transition = "transform 440ms cubic-bezier(0.22, 1, 0.36, 1)";
-        tiltEl.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-      });
-    }
-
     // Cursor spotlight on benefit cards (CSS reads --mx / --my)
     document.querySelectorAll(".benefit").forEach(function (card) {
       card.addEventListener("pointermove", function (e) {
