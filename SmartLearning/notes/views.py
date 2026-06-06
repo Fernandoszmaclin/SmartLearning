@@ -27,6 +27,7 @@ def _page_payload(page):
         "title": page.display_title,
         "icon": page.icon,
         "is_favorite": page.is_favorite,
+        "is_folder": page.is_folder,
         "parent": page.parent_id,
     }
 
@@ -66,6 +67,8 @@ def workspace(request, page_id=None):
     trail = []
     if page_id is not None:
         current = _user_page(request, page_id)
+        if current.is_folder:
+            return redirect("workspace")
         blocks = list(current.blocks.all())
         # Trilha de ancestrais (raiz → página atual), estilo Notion.
         node, seen = current, set()
@@ -75,7 +78,7 @@ def workspace(request, page_id=None):
             node = node.parent
         trail.reverse()
     else:
-        first = Page.objects.filter(owner=request.user).first()
+        first = Page.objects.filter(owner=request.user, is_folder=False).first()
         if first:
             url = reverse("workspace_page", args=[first.id])
             if request.GET.get("tasks"):
@@ -141,14 +144,19 @@ def workspace(request, page_id=None):
 def api_page_create(request):
     data = _json(request)
     parent = _user_page(request, data["parent"]) if data.get("parent") else None
+    
+    if parent and not parent.is_folder:
+        return JsonResponse({"error": "Somente pastas podem abrigar outras páginas/pastas."}, status=400)
+
     nxt = Page.objects.filter(owner=request.user, parent=parent).aggregate(
         m=Max("position")
     )["m"]
     page = Page.objects.create(
         owner=request.user,
         parent=parent,
-        title=data.get("title") or "Untitled",
-        icon=data.get("icon") or "📄",
+        is_folder=data.get("is_folder", False),
+        title=data.get("title") or ("Nova Pasta" if data.get("is_folder") else "Untitled"),
+        icon=data.get("icon") or ("📁" if data.get("is_folder") else "📄"),
         position=(nxt or 0) + 1,
     )
     return JsonResponse(_page_payload(page), status=201)
@@ -166,6 +174,12 @@ def api_page_move(request, page_id):
 
     parent_id = data.get("parent")
     new_parent = _user_page(request, parent_id) if parent_id else None
+
+    if new_parent and not new_parent.is_folder:
+        return JsonResponse(
+            {"error": "Somente pastas podem abrigar outras páginas/pastas."},
+            status=400,
+        )
 
     # Impede mover uma página para dentro dela mesma ou de uma descendente.
     anc = new_parent

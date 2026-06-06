@@ -31,6 +31,10 @@ class Page(models.Model):
         help_text="Quando preenchido numa página raiz, ela é a pasta dessa matéria.",
     )
     is_favorite = models.BooleanField(default=False)
+    is_folder = models.BooleanField(
+        default=False,
+        help_text="Se verdadeiro, atua como uma pasta que contém páginas, mas não contém blocos."
+    )
     position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

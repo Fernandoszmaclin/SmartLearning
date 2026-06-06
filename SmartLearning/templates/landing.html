@@ -1,59 +1,39 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}SmartLearning: estude organizado, no seu ritmo{% endblock %}
 
 {% block content %}
-<section class="section ambient hero-section">
-  <div class="container hero hero-home" data-stagger="90">
-    <div class="hero-main">
-      <div class="hero-copy">
-        <span class="eyebrow reveal">Sua área de estudos</span>
-        <h1 class="reveal reveal-soft">Anotações organizadas. Foco de verdade.</h1>
-        <p class="lead reveal">
-          Menos abas abertas, menos distração. Um espaço calmo para escrever,
-          organizar e focar de verdade.
-        </p>
-        <div class="hero-actions reveal">
-          {% if user.is_authenticated %}
-            <a class="btn btn-primary btn-lg" href="{% url 'workspace' %}">Abrir minha área<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
-          {% else %}
-            <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Começar de graça<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
-            <a class="btn btn-secondary btn-lg" href="{% url 'login' %}">Entrar</a>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="film-bezel reveal">
-        <div class="hero-film" data-home-film aria-label="Prévia animada do SmartLearning">
-        <div class="film-top">
-          <span></span><span></span><span></span>
-          <strong>Plano de estudo</strong>
-        </div>
-        <div class="film-stage">
-          <div class="film-card film-note">
-            <small>Anotações</small>
-            <strong>Revisar cálculo</strong>
-            <span></span><span></span><span class="short"></span>
-          </div>
-          <div class="film-card film-task">
-            <small>Hoje</small>
-            <div class="check-row"><i></i><span>Resumo pronto</span></div>
-            <div class="check-row"><i></i><span>Lista de exercícios</span></div>
-            <div class="check-row muted"><i></i><span>Simulado</span></div>
-          </div>
-          <div class="film-focus">
-            <b>25:00</b>
-            <span>Pomodoro</span>
-          </div>
-          <div class="film-calendar" aria-hidden="true">
-            <span></span><span></span><span class="hot"></span><span></span>
-            <span></span><span class="accent"></span><span></span><span></span>
-          </div>
-        </div>
-      </div>
-      </div>
+<section class="video-hero" aria-label="SmartLearning">
+  <video class="video-hero-media" autoplay muted loop playsinline
+         poster="{% static 'video/smartlearning-ad-poster.jpg' %}"
+         aria-hidden="true" tabindex="-1">
+    <source src="{% static 'video/smartlearning-ad.mp4' %}" type="video/mp4">
+  </video>
+  <div class="video-hero-scrim" aria-hidden="true"></div>
+  <div class="container video-hero-inner" data-stagger="90">
+    <span class="eyebrow reveal">Sua área de estudos</span>
+    <h1 class="reveal reveal-soft">Anotações organizadas.<br>Foco de verdade.</h1>
+    <p class="lead reveal">
+      Um espaço calmo para escrever, organizar e focar. Sem mil abas abertas.
+    </p>
+    <div class="hero-actions reveal">
+      {% if user.is_authenticated %}
+        <a class="btn btn-primary btn-lg" href="{% url 'workspace' %}">Abrir minha área<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+      {% else %}
+        <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Começar de graça<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+        <a class="btn btn-hero-ghost btn-lg" href="{% url 'login' %}">Entrar</a>
+      {% endif %}
     </div>
+  </div>
+</section>
 
+<section class="section ambient">
+  <div class="container">
+    <div class="features-head reveal reveal-soft">
+      <h2>Tudo num lugar só.</h2>
+      <p>Três ferramentas que trabalham juntas no seu ritmo de estudo.</p>
+    </div>
     <div class="benefits" data-stagger="80">
       <article class="benefit benefit-feature reveal">
         <span class="benefit-icon" aria-hidden="true">
@@ -153,12 +133,23 @@
     </div>
   </div>
 
-  <div class="container scrolly-cta reveal">
-    {% if user.is_authenticated %}
-      <a class="btn btn-primary btn-lg" href="{% url 'workspace' %}">Abrir minha área<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
-    {% else %}
-      <a class="btn btn-primary btn-lg" href="{% url 'signup' %}">Começar de graça<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
-    {% endif %}
+</section>
+
+<section class="belong" aria-label="Comece a estudar com o SmartLearning">
+  <span class="belong-sheen" aria-hidden="true"></span>
+  <div class="container belong-inner reveal reveal-soft">
+    <h2>Seu lugar para estudar com calma.</h2>
+    <p>
+      Não importa se você está no primeiro semestre ou correndo atrás do diploma.
+      Comece em minutos, do seu jeito, sem custo nenhum.
+    </p>
+    <div class="hero-actions belong-actions">
+      {% if user.is_authenticated %}
+        <a class="btn btn-belong btn-lg" href="{% url 'workspace' %}">Abrir minha área<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+      {% else %}
+        <a class="btn btn-belong btn-lg" href="{% url 'signup' %}">Começar de graça<span class="btn-trail" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span></a>
+      {% endif %}
+    </div>
   </div>
 </section>
 {% endblock %}

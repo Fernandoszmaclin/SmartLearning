@@ -1288,3 +1288,6 @@ body.app.theme-dark {
    FLUID USER MENU
    ========================================================================= */
 /* Moved fluid-menu-container styles to main.css */
+
+.form-section { margin-bottom: 2rem; }
+.form-section-title { font-size: 1.1rem; font-family: var(--font-heading); font-weight: 600; color: var(--color-foreground); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-muted); }
