@@ -1,13 +1,18 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import F, Max, Prefetch
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import content_disposition_header, urlencode
+from django.utils.text import get_valid_filename
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
+
+from SmartLearning.security import validate_workspace_file
 
 from .models import Block, Page
 
@@ -82,7 +87,7 @@ def workspace(request, page_id=None):
         if first:
             url = reverse("workspace_page", args=[first.id])
             if request.GET.get("tasks"):
-                url = f"{url}?tasks={request.GET['tasks']}"
+                url = f"{url}?{urlencode({'tasks': request.GET['tasks']})}"
             return redirect(url)
 
     from pomodoro.models import PomodoroSession
@@ -278,7 +283,12 @@ def api_block_detail(request, block_id):
     # For file uploads, we might use POST with multipart data
     if request.method == "POST" and request.FILES:
         if "file" in request.FILES:
-            block.file = request.FILES["file"]
+            uploaded_file = request.FILES["file"]
+            try:
+                validate_workspace_file(uploaded_file)
+            except ValidationError as exc:
+                return JsonResponse({"error": exc.messages[0]}, status=400)
+            block.file = uploaded_file
             block.kind = Block.Kind.FILE
             block.save()
         return JsonResponse(_block_payload(block))
@@ -328,8 +338,11 @@ def export_markdown(request, page_id):
 
     content = "\n".join(md_lines)
     response = HttpResponse(content, content_type="text/markdown; charset=utf-8")
-    filename = f"{page.display_title.replace(' ', '_')}.md"
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    filename = get_valid_filename(page.display_title.replace(" ", "_")) or "workspace"
+    response["Content-Disposition"] = content_disposition_header(
+        as_attachment=True,
+        filename=f"{filename}.md",
+    )
     return response
 
 

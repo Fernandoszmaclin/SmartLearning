@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from SmartLearning.security import validate_workspace_file
+
 
 class Page(models.Model):
     """A Notion-like document. Pages can nest inside other pages."""
@@ -72,7 +74,12 @@ class Block(models.Model):
         max_length=20, choices=Kind.choices, default=Kind.PARAGRAPH
     )
     text = models.TextField(blank=True)
-    file = models.FileField(upload_to="blocks/files/", null=True, blank=True)
+    file = models.FileField(
+        upload_to="blocks/files/",
+        null=True,
+        blank=True,
+        validators=[validate_workspace_file],
+    )
     checked = models.BooleanField(default=False)
     position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

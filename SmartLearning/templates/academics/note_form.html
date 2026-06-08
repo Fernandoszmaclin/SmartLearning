@@ -5,9 +5,9 @@
 
 {% block app %}
 <section class="ac-form-wrap reveal is-visible">
-  <a class="ac-back" href="{{ request.GET.next|default:'' }}{% if not request.GET.next %}{% url 'workspace' %}?tasks=open{% endif %}">
+  <a class="ac-back" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">
     <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-chevron-left"/></svg>
-    {% if request.GET.next %}Voltar{% else %}Voltar para anotações{% endif %}
+    {% if safe_next %}Voltar{% else %}Voltar para anotações{% endif %}
   </a>
   <h1 class="ac-form-title">{% if request.GET.readonly %}Anotação (Somente leitura){% elif mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}</h1>
 
@@ -26,7 +26,7 @@
         });
       </script>
     {% endif %}
-    {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+    {% if safe_next %}<input type="hidden" name="next" value="{{ safe_next }}">{% endif %}
 
     {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
 
@@ -126,10 +126,10 @@
     <div class="ac-form-actions">
       {% if not request.GET.readonly %}
         <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Salvar{% else %}Criar anotação{% endif %}</button>
-        <a class="btn btn-secondary" href="{{ request.GET.next|default:'' }}{% if not request.GET.next %}{% url 'workspace' %}?tasks=open{% endif %}">Cancelar</a>
+        <a class="btn btn-secondary" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">Cancelar</a>
       {% else %}
         <a class="btn btn-primary" href="{% url 'academic_note_edit' form.instance.pk %}">Habilitar Edição</a>
-        <a class="btn btn-secondary" href="{{ request.GET.next|default:'' }}{% if not request.GET.next %}{% url 'workspace' %}?tasks=open{% endif %}">Voltar</a>
+        <a class="btn btn-secondary" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">Voltar</a>
       {% endif %}
     </div>
   </form>
@@ -160,7 +160,10 @@
       
       if (name) {
         inherited.classList.remove("is-empty");
-        inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span><strong>" + name + "</strong>";
+        inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span>";
+        var strong = document.createElement("strong");
+        strong.textContent = name;
+        inherited.appendChild(strong);
       } else {
         inherited.classList.add("is-empty");
         inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span><strong style='color: var(--color-text-soft); font-weight: 500; font-size: 0.9rem;'>Esta matéria não tem professor(a) cadastrado.</strong>";

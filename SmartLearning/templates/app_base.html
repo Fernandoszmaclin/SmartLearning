@@ -265,9 +265,24 @@
       }
     }
 
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function safeInternalHref(value) {
+      const href = String(value || '');
+      return href.startsWith('/') && !href.startsWith('//') ? href : '{% url "workspace" %}';
+    }
+
     function renderCmdResults(data, q) {
       if (data.total === 0) {
-        cmdResults.innerHTML = `<div class="cmd-empty-state"><p>Nenhum resultado para "${q}"</p></div>`;
+        cmdResults.innerHTML = `<div class="cmd-empty-state"><p>Nenhum resultado para "${escapeHTML(q)}"</p></div>`;
         return;
       }
       
@@ -281,7 +296,7 @@
           if (item.color) {
             iconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:${item.color}"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`;
           } else if (item.icon) {
-            iconHtml = `<span style="font-size:1.2rem; line-height:1;">${item.icon}</span>`;
+            iconHtml = `<span style="font-size:1.2rem; line-height:1;">${escapeHTML(item.icon)}</span>`;
           } else if (item.category_value === 'prova') {
             iconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>`;
           } else if (item.category_value === 'trabalho') {
@@ -291,11 +306,11 @@
           }
 
           groupHtml += `
-            <a href="${item.url}" class="cmd-item">
+            <a href="${safeInternalHref(item.url)}" class="cmd-item">
               <div class="cmd-item-icon">${iconHtml}</div>
               <div class="cmd-item-info">
                 <span class="cmd-item-title">${item.title || item.name}</span>
-                <span class="cmd-item-desc">${item.subject || item.professor || item.category || 'Workspace'}</span>
+                <span class="cmd-item-desc">${escapeHTML(item.subject || item.professor || item.category || 'Workspace')}</span>
               </div>
               <div class="cmd-item-action">
                 <span>Enter</span>
@@ -380,7 +395,7 @@
 
       function renderHeaderResults(data, q) {
         if (data.total === 0) {
-          headerResults.innerHTML = `<div class="header-search-empty">Nenhum resultado para "${q}"</div>`;
+          headerResults.innerHTML = `<div class="header-search-empty">Nenhum resultado para "${escapeHTML(q)}"</div>`;
           return;
         }
         
@@ -394,7 +409,7 @@
             iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:${item.color}"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`;
           } else if (item.icon) {
             // Page
-            iconHtml = `<span style="display: flex; align-items: center; justify-content: center; font-size: 0.85rem; width: 100%; height: 100%; line-height: normal;">${item.icon}</span>`;
+            iconHtml = `<span style="display: flex; align-items: center; justify-content: center; font-size: 0.85rem; width: 100%; height: 100%; line-height: normal;">${escapeHTML(item.icon)}</span>`;
           } else if (item.category_value === 'prova') {
             iconHtml = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>`;
           } else if (item.category_value === 'trabalho') {
@@ -404,11 +419,11 @@
           }
 
           html += `
-            <li class="header-search-item" onclick="window.location.href='${item.url}'">
+            <li class="header-search-item" onclick="window.location.href='${safeInternalHref(item.url)}'">
               <span class="hs-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;">${iconHtml}</span>
               <div class="hs-info">
                 <span class="hs-title">${item.title || item.name}</span>
-                <span class="hs-desc">${item.subject || item.professor || item.category || 'Workspace'}</span>
+                <span class="hs-desc">${escapeHTML(item.subject || item.professor || item.category || 'Workspace')}</span>
               </div>
               <div class="hs-action" style="margin-left:auto; color:var(--color-text-soft);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -427,4 +442,3 @@
   </script>
 </body>
 </html>
-

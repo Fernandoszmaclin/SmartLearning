@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from SmartLearning.security import validate_hex_color
+
 
 class Subject(models.Model):
     """Uma matéria da faculdade. Serve como tag para filtrar anotações."""
@@ -14,6 +16,7 @@ class Subject(models.Model):
     professor = models.CharField("Professor(a)", max_length=120, blank=True)
     color = models.CharField(
         "Cor", max_length=7, default="#0D9488",
+        validators=[validate_hex_color],
         help_text="Cor da tag/matéria (hex).",
     )
     created_at = models.DateTimeField(auto_now_add=True)

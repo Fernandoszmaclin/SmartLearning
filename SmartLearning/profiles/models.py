@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from SmartLearning.security import validate_profile_photo
+
 
 class Profile(models.Model):
     class Theme(models.TextChoices):
@@ -12,7 +14,11 @@ class Profile(models.Model):
         on_delete=models.CASCADE,
         related_name="profile",
     )
-    photo = models.FileField(upload_to="profile_photos/", blank=True)
+    photo = models.FileField(
+        upload_to="profile_photos/",
+        blank=True,
+        validators=[validate_profile_photo],
+    )
     bio = models.CharField("Bio", max_length=180, blank=True)
     theme = models.CharField(
         "Tema", max_length=10, choices=Theme.choices, default=Theme.LIGHT
