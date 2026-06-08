@@ -7,9 +7,9 @@ from django.db.models import Max, Prefetch, Count, F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from SmartLearning.security import safe_redirect_url
 from notes.models import Page
 
 from .forms import NoteForm, SubjectForm
@@ -69,12 +69,7 @@ def _auto_subject_folder(user, subject):
 
 def _safe_next(request):
     """Devolve o ?next= se ele apontar para dentro do próprio site; senão None."""
-    nxt = request.POST.get("next") or request.GET.get("next")
-    if nxt and url_has_allowed_host_and_scheme(
-        nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-    ):
-        return nxt
-    return None
+    return safe_redirect_url(request, request.POST.get("next") or request.GET.get("next"))
 
 
 def _post_save_redirect(note, next_url=None):
@@ -133,6 +128,7 @@ def note_create(request):
         "mode": "new",
         "subject_professors": _subject_professors(request.user),
         "subject_folders": _subject_folders(request.user),
+        "safe_next": _safe_next(request),
     })
 
 
@@ -157,6 +153,7 @@ def note_edit(request, pk):
         "note": note,
         "subject_professors": _subject_professors(request.user),
         "subject_folders": _subject_folders(request.user),
+        "safe_next": _safe_next(request),
     })
 
 
@@ -174,7 +171,7 @@ def note_toggle_done(request, pk):
     note = get_object_or_404(Note, pk=pk, owner=request.user)
     note.is_done = not note.is_done
     note.save(update_fields=["is_done", "updated_at"])
-    nxt = request.POST.get("next") or f"{reverse('workspace')}?tasks=open"
+    nxt = _safe_next(request) or f"{reverse('workspace')}?tasks=open"
     return redirect(nxt)
 
 
@@ -188,7 +185,7 @@ def subject_create(request):
         # ignore duplicates silently
         if not Subject.objects.filter(owner=request.user, name=subject.name).exists():
             subject.save()
-    return redirect(request.POST.get("next") or "subject_list")
+    return redirect(_safe_next(request) or "subject_list")
 
 
 @login_required

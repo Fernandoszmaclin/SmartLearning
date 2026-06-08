@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from SmartLearning.security import safe_redirect_url
+
 from .forms import ProfileForm, UserProfileForm
 from .models import Profile
 
@@ -9,6 +11,7 @@ from .models import Profile
 @login_required
 def profile_edit(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
+    safe_next = safe_redirect_url(request, request.GET.get("next"))
 
     if request.method == "POST":
         user_form = UserProfileForm(request.POST, instance=request.user)
@@ -16,7 +19,7 @@ def profile_edit(request):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            next_url = request.POST.get("next")
+            next_url = safe_redirect_url(request, request.POST.get("next"))
             if next_url:
                 return redirect(next_url)
             return redirect("profile_edit")
@@ -28,6 +31,7 @@ def profile_edit(request):
         "user_form": user_form,
         "profile_form": profile_form,
         "profile": profile,
+        "safe_next": safe_next,
     })
 
 
@@ -41,4 +45,4 @@ def profile_toggle_theme(request):
         else Profile.Theme.DARK
     )
     profile.save(update_fields=["theme", "updated_at"])
-    return redirect(request.POST.get("next") or "workspace")
+    return redirect(safe_redirect_url(request, request.POST.get("next")) or "workspace")
