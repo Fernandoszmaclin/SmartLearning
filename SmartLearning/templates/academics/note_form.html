@@ -9,11 +9,59 @@
     <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-chevron-left"/></svg>
     {% if safe_next %}Voltar{% else %}Voltar para anotações{% endif %}
   </a>
-  <h1 class="ac-form-title">
-    {% if request.GET.readonly %}Anotação<span class="ac-readonly-chip" role="status" aria-label="Modo de visualização (somente leitura)"><svg class="ico" width="13" height="13" stroke-width="2"><use href="#i-lock"/></svg>Visualização</span>{% elif mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}
-  </h1>
+  {% if request.GET.readonly %}
+  {# ---- Vista de leitura: a anotação renderizada como uma folha de caderno ---- #}
+  <article class="note-paper">
+    <header class="note-paper-head">
+      <div class="note-paper-badges">
+        <span class="ac-readonly-chip" role="status" aria-label="Modo de visualização (somente leitura)">
+          <svg class="ico" width="13" height="13" stroke-width="2"><use href="#i-lock"/></svg>Visualização
+        </span>
+        {% if note.is_done %}<span class="note-done-chip">Terminado</span>{% endif %}
+      </div>
+      <h1 class="note-paper-title">{{ note.title }}</h1>
+    </header>
 
-  <form method="post" class="ac-form{% if request.GET.readonly %} is-readonly{% endif %}" id="note-form">
+    <dl class="note-meta">
+      <div class="note-meta-item">
+        <dt><svg class="ico" width="15" height="15" stroke-width="2"><use href="#i-folder"/></svg>Categoria</dt>
+        <dd>{{ note.get_category_display }}</dd>
+      </div>
+      <div class="note-meta-item">
+        <dt><svg class="ico" width="15" height="15" stroke-width="2"><use href="#i-book"/></svg>Matéria</dt>
+        <dd>{% if note.subject %}{{ note.subject.name }}{% else %}<span class="note-meta-empty">Sem matéria</span>{% endif %}</dd>
+      </div>
+      <div class="note-meta-item">
+        <dt><svg class="ico" width="15" height="15" stroke-width="2"><use href="#i-user"/></svg>Professor(a)</dt>
+        <dd>{% if note.professor %}{{ note.professor }}{% else %}<span class="note-meta-empty">Não informado</span>{% endif %}</dd>
+      </div>
+      <div class="note-meta-item">
+        <dt><svg class="ico" width="15" height="15" stroke-width="2"><use href="#i-calendar"/></svg>Data de entrega / realização</dt>
+        <dd>{% if note.due_date %}{{ note.due_date|date:"d/m/Y" }}{% else %}<span class="note-meta-empty">Sem data</span>{% endif %}</dd>
+      </div>
+      <div class="note-meta-item">
+        <dt><svg class="ico" width="15" height="15" stroke-width="2"><use href="#i-zap"/></svg>Dificuldade (1 a 5)</dt>
+        <dd>{{ note.difficulty }}/5</dd>
+      </div>
+      <div class="note-meta-item">
+        <dt><svg class="ico" width="15" height="15" stroke-width="2"><use href="#i-clock"/></svg>Tempo estimado (minutos)</dt>
+        <dd>{{ note.estimated_time }} min</dd>
+      </div>
+    </dl>
+
+    <div class="note-body">
+      {% if note.content %}{{ note.content }}{% else %}<span class="note-meta-empty">Esta anotação ainda não tem conteúdo.</span>{% endif %}
+    </div>
+
+    <div class="ac-form-actions">
+      <a class="btn btn-primary" href="{% url 'academic_note_edit' note.pk %}">Habilitar Edição</a>
+      <a class="btn btn-secondary" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">Voltar</a>
+    </div>
+  </article>
+  {% else %}
+  <h1 class="ac-form-title">{% if mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}</h1>
+
+  <form method="post" class="ac-form" id="note-form">
     {% csrf_token %}
     {% if safe_next %}<input type="hidden" name="next" value="{{ safe_next }}">{% endif %}
 
@@ -113,15 +161,11 @@
 
 
     <div class="ac-form-actions">
-      {% if not request.GET.readonly %}
-        <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Salvar{% else %}Criar anotação{% endif %}</button>
-        <a class="btn btn-secondary" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">Cancelar</a>
-      {% else %}
-        <a class="btn btn-primary" href="{% url 'academic_note_edit' form.instance.pk %}">Habilitar Edição</a>
-        <a class="btn btn-secondary" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">Voltar</a>
-      {% endif %}
+      <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Salvar{% else %}Criar anotação{% endif %}</button>
+      <a class="btn btn-secondary" href="{% if safe_next %}{{ safe_next }}{% else %}{% url 'workspace' %}?tasks=open{% endif %}">Cancelar</a>
     </div>
   </form>
+  {% endif %}
 </section>
 {{ subject_professors|json_script:"subject-professors" }}
 {% endblock %}

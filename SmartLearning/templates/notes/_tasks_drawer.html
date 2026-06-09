@@ -71,7 +71,7 @@
               </button>
             </form>
 
-            <a class="tasks-item-main" href="{% url 'academic_note_edit' note.id %}?next={{ request.get_full_path|urlencode }}">
+            <a class="tasks-item-main" href="{% url 'academic_note_edit' note.id %}?readonly=1&next={{ request.get_full_path|urlencode }}">
               <span class="tasks-item-title">{{ note.title }}</span>
               <span class="tasks-item-meta">
                 {% if note.subject %}
