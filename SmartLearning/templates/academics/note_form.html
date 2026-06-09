@@ -9,23 +9,12 @@
     <svg class="ico" width="16" height="16" stroke-width="2"><use href="#i-chevron-left"/></svg>
     {% if safe_next %}Voltar{% else %}Voltar para anotações{% endif %}
   </a>
-  <h1 class="ac-form-title">{% if request.GET.readonly %}Anotação (Somente leitura){% elif mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}</h1>
+  <h1 class="ac-form-title">
+    {% if request.GET.readonly %}Anotação<span class="ac-readonly-chip" role="status" aria-label="Modo de visualização (somente leitura)"><svg class="ico" width="13" height="13" stroke-width="2"><use href="#i-lock"/></svg>Visualização</span>{% elif mode == 'edit' %}Editar anotação{% else %}Nova anotação{% endif %}
+  </h1>
 
-  <form method="post" class="ac-form" id="note-form">
+  <form method="post" class="ac-form{% if request.GET.readonly %} is-readonly{% endif %}" id="note-form">
     {% csrf_token %}
-    {% if request.GET.readonly %}
-      <div style="margin-bottom: 20px;">
-        <a class="btn btn-primary" href="{% url 'academic_note_edit' note.id %}">
-          <svg class="ico" width="14" height="14" stroke-width="2" style="margin-right: 6px;"><use href="#i-edit"/></svg>
-          Habilitar Edição
-        </a>
-      </div>
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          document.querySelectorAll('#note-form input:not([type="hidden"]), #note-form select, #note-form textarea').forEach(el => el.disabled = true);
-        });
-      </script>
-    {% endif %}
     {% if safe_next %}<input type="hidden" name="next" value="{{ safe_next }}">{% endif %}
 
     {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}

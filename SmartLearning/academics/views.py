@@ -2,6 +2,7 @@ import calendar
 from collections import Counter
 from datetime import timedelta
 
+from django import forms
 from django.contrib.auth.decorators import login_required
 from django.db.models import Max, Prefetch, Count, F, Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -39,6 +40,23 @@ def _subject_professors(user):
         for subject in Subject.objects.filter(owner=user).only("id", "professor")
         if subject.professor
     }
+
+
+def _lock_form_widgets(form):
+    """Coloca os widgets do form em modo leitura (não editável).
+
+    Texto/número recebem ``readonly`` (continuam selecionáveis e com contraste
+    pleno); seleções, datas e checkbox usam ``disabled`` por não suportarem
+    ``readonly``. O visual de "leitura" (sem moldura de input) fica no CSS.
+    """
+    for field in form.fields.values():
+        widget = field.widget
+        choice_or_check = isinstance(widget, (forms.Select, forms.CheckboxInput))
+        is_date = widget.attrs.get("type") == "date"
+        if choice_or_check or is_date:
+            widget.attrs["disabled"] = True
+        else:
+            widget.attrs["readonly"] = True
 
 
 def _inherit_subject_professor(note):
@@ -147,6 +165,8 @@ def note_edit(request, pk):
                 and page.parent.subject_id == note.subject_id):
             initial["use_subject_folder"] = True
         form = NoteForm(instance=note, owner=request.user, initial=initial)
+        if request.GET.get("readonly"):
+            _lock_form_widgets(form)
     return render(request, "academics/note_form.html", {
         "form": form,
         "mode": "edit",

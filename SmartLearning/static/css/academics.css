@@ -79,6 +79,44 @@
 .ac-back { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-soft); font-weight: 600; font-size: 0.9rem; margin-bottom: var(--space-md); }
 .ac-back:hover { color: var(--color-primary); text-decoration: none; }
 .ac-form-title { margin-bottom: var(--space-lg); }
+
+/* ---- Anotação em modo somente-leitura ----
+   Leitura ≠ desabilitado: em vez de campos cinza e mortos, os widgets perdem a
+   moldura de input e viram texto legível em contraste pleno. Um chip discreto
+   com cadeado sinaliza o estado (sem depender só do ícone). */
+.ac-readonly-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  vertical-align: middle;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+  background: var(--color-muted);
+  border-radius: 999px;
+}
+.ac-readonly-chip .ico { color: var(--color-text-soft); }
+
+.ac-form.is-readonly .field-ico { color: var(--color-text-soft); }
+.ac-form.is-readonly .input {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  opacity: 1;
+  cursor: default;
+  color: var(--color-foreground);
+  -webkit-text-fill-color: var(--color-foreground); /* texto disabled no Safari */
+  appearance: none;
+}
+.ac-form.is-readonly select.input { background-image: none; }
+.ac-form.is-readonly .input:focus { outline: none; box-shadow: none; }
+.ac-form.is-readonly .field-check { cursor: default; }
+.ac-form.is-readonly .field-check input { opacity: 1; }
 .ac-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 .field-check { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md); cursor: pointer; }
 .field-check input { width: 18px; height: 18px; accent-color: var(--color-primary); }
