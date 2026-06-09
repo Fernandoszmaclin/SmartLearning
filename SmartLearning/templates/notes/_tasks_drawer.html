@@ -57,6 +57,7 @@
           <div class="tasks-item cat-{{ note.category }}{% if note.is_done %} is-done{% endif %}"
                data-category="{{ note.category }}"
                data-subject="{{ note.subject_id|default:'' }}"
+               data-due="{{ note.due_date|date:'Y-m-d' }}"
                data-done="{% if note.is_done %}1{% else %}0{% endif %}">
 
             <form method="post" action="{% url 'academic_note_toggle' note.id %}" class="tasks-toggle-form">

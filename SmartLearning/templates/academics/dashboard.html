@@ -42,12 +42,12 @@
       <strong class="stat-num">{{ counts.estudo }}</strong>
       <span class="stat-sub">abrir workspace <span aria-hidden="true">→</span></span>
     </a>
-    <a class="stat-card stat-prova" href="{% url 'workspace' %}?tasks=open">
+    <a class="stat-card stat-prova" href="{% url 'workspace' %}?tasks=open&cat=prova">
       <span class="stat-label">Provas</span>
       <strong class="stat-num">{{ counts.prova }}</strong>
       <span class="stat-sub">ver anotações <span aria-hidden="true">→</span></span>
     </a>
-    <a class="stat-card stat-trabalho" href="{% url 'workspace' %}?tasks=open">
+    <a class="stat-card stat-trabalho" href="{% url 'workspace' %}?tasks=open&cat=trabalho">
       <span class="stat-label">Trabalhos</span>
       <strong class="stat-num">{{ counts.trabalho }}</strong>
       <span class="stat-sub">ver anotações <span aria-hidden="true">→</span></span>

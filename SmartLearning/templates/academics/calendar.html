@@ -33,7 +33,7 @@
           <span class="cal-daynum">{{ cell.date.day }}</span>
           {% for task in cell.tasks %}
             <a class="cal-task cat-{{ task.category }} {% if task.is_done %}done{% endif %}"
-               href="{% url 'academic_note_edit' task.id %}"
+               href="{% url 'academic_note_edit' task.id %}?readonly=1&next={{ request.get_full_path|urlencode }}"
                title="{{ task.get_category_display }}: {{ task.title }}{% if task.subject %} ({{ task.subject.name }}){% endif %}">
               {% if task.is_done %}✓ {% endif %}{{ task.title }}
             </a>

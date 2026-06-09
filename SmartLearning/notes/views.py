@@ -99,8 +99,9 @@ def workspace(request, page_id=None):
         first = Page.objects.filter(owner=request.user, is_folder=False).first()
         if first:
             url = reverse("workspace_page", args=[first.id])
-            if request.GET.get("tasks"):
-                url = f"{url}?{urlencode({'tasks': request.GET['tasks']})}"
+            params = {k: request.GET[k] for k in ("tasks", "cat") if request.GET.get(k)}
+            if params:
+                url = f"{url}?{urlencode(params)}"
             return redirect(url)
 
     from pomodoro.models import PomodoroSession

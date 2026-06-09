@@ -521,6 +521,27 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
   display: flex; flex-direction: column; gap: 8px;
   padding: 2px var(--space-lg) var(--space-md);
 }
+/* Cabeçalho de grupo por prazo (inserido pelo JS): fixo no topo da rolagem,
+   discreto, com contagem. O fundo casa com o painel para mascarar as linhas. */
+.tasks-group {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; gap: 8px;
+  margin: 6px 0 0; padding: 7px 2px 5px;
+  background: var(--color-surface);
+}
+.tasks-group:first-child { margin-top: 0; }
+.tasks-group-label {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--color-text-soft);
+}
+.tasks-group-count {
+  font-size: 0.64rem; font-weight: 700; color: var(--color-text-soft);
+  background: var(--color-muted); border-radius: 999px; padding: 1px 7px;
+  font-variant-numeric: tabular-nums;
+}
+.tasks-group.is-overdue .tasks-group-label { color: #B91C1C; }
+.tasks-group.is-overdue .tasks-group-count { color: #B91C1C; background: rgba(185,28,28,0.10); }
+
 .tasks-item {
   position: relative; overflow: hidden;
   display: flex; align-items: center; gap: 12px;
