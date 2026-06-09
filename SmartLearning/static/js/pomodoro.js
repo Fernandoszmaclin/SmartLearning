@@ -11,8 +11,8 @@
 
   const root = document.getElementById("pomodoro");
   if (!root) return;
-  const LOG_URL = root.dataset.logUrl || "/academico/workspace/api/pomodoro/log/";
-  const STATS_URL = root.dataset.statsUrl || "/academico/workspace/api/pomodoro/stats/";
+  const LOG_URL = root.dataset.logUrl || "/pomodoro/api/pomodoro/log/";
+  const STATS_URL = root.dataset.statsUrl || "/pomodoro/api/pomodoro/stats/";
   const pageId = root.dataset.pageId ? Number(root.dataset.pageId) : null;
 
   const timeEl = document.getElementById("pomo-time");

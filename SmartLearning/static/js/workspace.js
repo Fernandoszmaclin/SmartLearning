@@ -1,5 +1,5 @@
 /* SmartLearning workspace - Notion-like block editor.
-   Plain JS, no build step. Talks to the JSON API under /academico/workspace/api/. */
+   Plain JS, no build step. Talks to the JSON API under /workspace/api/. */
 (function () {
   "use strict";
 
@@ -319,6 +319,7 @@
     if (!drawer || !openBtn) return;
     const panel = drawer.querySelector(".tasks-panel");
     const closeEls = drawer.querySelectorAll("[data-tasks-close]");
+    const listEl = drawer.querySelector(".tasks-list");
     const items = Array.from(drawer.querySelectorAll(".tasks-item"));
     const tabs = Array.from(drawer.querySelectorAll(".tasks-tab"));
     const chips = Array.from(drawer.querySelectorAll(".tasks-chip"));
@@ -394,7 +395,73 @@
       updateBadge();
     }
 
-    function render() { syncChrome(); applyFilter(); updateCounts(); }
+    // Agrupamento por prazo (estilo Todoist/Things): reordena os itens visíveis
+    // em "baldes" temporais e insere um cabeçalho fixo por grupo. Torna a lista
+    // escaneável quando há muitas anotações. Roda junto do filtro.
+    const GROUPS = [
+      { key: "overdue", label: "Atrasadas" },
+      { key: "today", label: "Hoje" },
+      { key: "week", label: "Próximos 7 dias" },
+      { key: "later", label: "Depois" },
+      { key: "nodate", label: "Sem prazo" },
+      { key: "done", label: "Concluídas" },
+    ];
+    const GROUP_ORDER = Object.fromEntries(GROUPS.map((g, i) => [g.key, i]));
+
+    function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+    function bucketOf(el, today) {
+      if (isDone(el)) return "done";
+      const due = el.dataset.due;
+      if (!due) return "nodate";
+      const diff = Math.round((new Date(due + "T00:00:00") - today) / 86400000);
+      if (diff < 0) return "overdue";
+      if (diff === 0) return "today";
+      if (diff <= 7) return "week";
+      return "later";
+    }
+    function titleOf(el) {
+      const t = el.querySelector(".tasks-item-title");
+      return t ? t.textContent : "";
+    }
+
+    function groupAndOrder() {
+      if (!listEl) return;
+      listEl.querySelectorAll(".tasks-group").forEach((h) => h.remove());
+
+      // Calcula o balde de cada item visível uma única vez (evita reparsear
+      // datas no comparador do sort).
+      const today = startOfToday();
+      const rows = items
+        .filter((el) => !el.hidden)
+        .map((el) => ({ el, bucket: bucketOf(el, today), due: el.dataset.due || "", title: titleOf(el) }));
+
+      const counts = {};
+      rows.forEach((r) => { counts[r.bucket] = (counts[r.bucket] || 0) + 1; });
+
+      rows.sort((a, b) => {
+        if (a.bucket !== b.bucket) return GROUP_ORDER[a.bucket] - GROUP_ORDER[b.bucket];
+        if (a.due && b.due && a.due !== b.due) return a.due < b.due ? -1 : 1;
+        if (!a.due !== !b.due) return a.due ? -1 : 1;   // com prazo antes de sem prazo
+        return a.title.localeCompare(b.title);
+      });
+
+      let current = null;
+      rows.forEach(({ el, bucket }) => {
+        if (bucket !== current) {
+          current = bucket;
+          const g = GROUPS.find((x) => x.key === bucket);
+          const h = document.createElement("div");
+          h.className = "tasks-group" + (bucket === "overdue" ? " is-overdue" : "");
+          h.innerHTML = '<span class="tasks-group-label"></span><span class="tasks-group-count"></span>';
+          h.querySelector(".tasks-group-label").textContent = g ? g.label : bucket;
+          h.querySelector(".tasks-group-count").textContent = counts[bucket];
+          listEl.insertBefore(h, emptyEl);
+        }
+        listEl.insertBefore(el, emptyEl);
+      });
+    }
+
+    function render() { syncChrome(); applyFilter(); groupAndOrder(); updateCounts(); }
 
     function updateBadge() {
       if (!badge) return;
@@ -411,7 +478,10 @@
 
     // Reveal escalonado dos itens visíveis (entrada da gaveta / troca de filtro).
     function revealItems() {
-      items.filter((el) => !el.hidden).forEach((el, i) => {
+      const ordered = listEl
+        ? Array.from(listEl.querySelectorAll(".tasks-item:not([hidden])"))
+        : items.filter((el) => !el.hidden);
+      ordered.forEach((el, i) => {
         el.classList.remove("reveal");
         void el.offsetWidth;
         el.style.animationDelay = Math.min(i, 12) * 38 + "ms";
@@ -518,7 +588,13 @@
     render();
 
     // Abrir automaticamente via ?tasks=open (ex.: link externo "Anotações").
-    if (new URLSearchParams(window.location.search).get("tasks") === "open") openDrawer();
+    // ?cat=prova|trabalho seleciona a aba (ex.: cards do dashboard).
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get("tasks") === "open") {
+      const wantCat = qs.get("cat");
+      if (wantCat && tabs.some((t) => t.dataset.taskCat === wantCat)) { cat = wantCat; save(); }
+      openDrawer();
+    }
   })();
 
   if (!pageId) { initSidebarToggle(); return; }

@@ -75,15 +75,11 @@ def _safe_next(request):
 def _post_save_redirect(note, next_url=None):
     """Para onde ir depois de salvar.
 
-    Estudo abre direto na página do workspace (é onde o conteúdo vive). Tarefas
-    voltam para o ``next`` (ex.: o painel Acadêmico do workspace) quando houver;
-    senão caem na lista de anotações filtrada pela categoria.
+    Trabalhos/provas voltam para o ``next`` (ex.: a gaveta "Anotações" do
+    workspace) quando houver; senão caem na própria gaveta.
     """
-    if note.category == Note.Category.ESTUDO and note.workspace_page_id:
-        return redirect("workspace_page", page_id=note.workspace_page_id)
     if next_url:
         return redirect(next_url)
-    # Tarefas (trabalho/prova) vivem na gaveta "Anotações" do workspace.
     return redirect(f"{reverse('workspace')}?tasks=open")
 
 

@@ -875,6 +875,7 @@ textarea.input { font-family: var(--font-body); resize: vertical; }
 }
 .subject-note-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 .subject-note-card {
+  position: relative;
   display: flex;
   justify-content: space-between;
   gap: var(--space-md);
@@ -884,7 +885,28 @@ textarea.input { font-family: var(--font-body); resize: vertical; }
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms var(--ease-out);
 }
+.subject-note-card:hover {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+/* O card todo é clicável (abre a visualização) via link em camada. Os controles
+   reais (Editar, link de workspace) ficam acima desta camada. */
+.subject-note-open {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+}
+.subject-note-open:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.subject-note-card > div { position: relative; z-index: 1; pointer-events: none; }
+.subject-note-card > div a { pointer-events: auto; }
+.subject-note-edit { position: relative; z-index: 1; }
 .subject-note-card.cat-prova { border-left-color: #7C3AED; }
 .subject-note-card.cat-trabalho { border-left-color: #EA580C; }
 .subject-note-card h3 {

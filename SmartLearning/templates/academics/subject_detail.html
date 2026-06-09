@@ -60,6 +60,7 @@
             {% for note in notes %}
               <article class="subject-note-card cat-{{ key }}">
                 {% if key == 'estudo' %}
+                  <a class="subject-note-open" href="{% url 'workspace_page' note.id %}" aria-label="Abrir {{ note.display_title }}"></a>
                   <div>
                     <h3>{{ note.display_title }}</h3>
                   </div>
@@ -68,6 +69,7 @@
                     Acessar
                   </a>
                 {% else %}
+                  <a class="subject-note-open" href="{% url 'academic_note_edit' note.id %}?readonly=1&next={{ request.get_full_path|urlencode }}" aria-label="Abrir {{ note.title }}"></a>
                   <div>
                     <h3>{{ note.title }}</h3>
                     {% if note.content %}<p>{{ note.content|truncatewords:18 }}</p>{% endif %}

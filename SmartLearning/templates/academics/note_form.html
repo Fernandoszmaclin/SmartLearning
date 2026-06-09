@@ -176,36 +176,50 @@
     var cat = document.getElementById("id_category");
     var subject = document.getElementById("id_subject");
     var professor = document.getElementById("id_professor");
-    var inherited = document.getElementById("inherited-professor");
+    var inherited = document.getElementById("inherited-professor"); // só existe no modo "nova"
     var professorMap = {};
     try {
-      var mapData = document.getElementById("subject-professors").textContent;
-      professorMap = JSON.parse(mapData);
+      professorMap = JSON.parse(document.getElementById("subject-professors").textContent);
     } catch (e) {}
 
-    function sync() {
-      var isTask = cat.value === "trabalho" || cat.value === "prova";
+    var PROF_ICON = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span>";
 
-      if (!isTask || !subject || !professor || !inherited) return;
-
-      var name = professorMap[subject.value] || "";
-      professor.value = name;
-      
+    function renderPreview(name) {
+      if (!inherited) return;
       if (name) {
         inherited.classList.remove("is-empty");
-        inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span>";
+        inherited.innerHTML = PROF_ICON;
         var strong = document.createElement("strong");
         strong.textContent = name;
         inherited.appendChild(strong);
       } else {
         inherited.classList.add("is-empty");
-        inherited.innerHTML = "<span class='field-ico'><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>Professor(a)</span><strong style='color: var(--color-text-soft); font-weight: 500; font-size: 0.9rem;'>Esta matéria não tem professor(a) cadastrado.</strong>";
+        inherited.innerHTML = PROF_ICON + "<strong style='color: var(--color-text-soft); font-weight: 500; font-size: 0.9rem;'>Esta matéria não tem professor(a) cadastrado.</strong>";
       }
     }
 
-    if (cat) cat.addEventListener("change", sync);
-    if (subject) subject.addEventListener("change", sync);
-    sync();
+    // Preenche o professor(a) a partir da matéria escolhida.
+    // userAction = troca feita pelo usuário (distingue da carga inicial).
+    function applyProfessor(userAction) {
+      if (!cat || !subject || !professor) return;
+      var isTask = cat.value === "trabalho" || cat.value === "prova";
+      if (!isTask) return;
+      var name = professorMap[subject.value] || "";
+
+      if (inherited) {
+        // Modo "nova": espelha sempre a matéria e mostra o aviso quando vazio.
+        professor.value = name;
+        renderPreview(name);
+      } else if (userAction && name) {
+        // Modo edição: ao escolher uma matéria, herda o professor(a) dela —
+        // sem apagar um valor digitado à mão quando a matéria não tem um.
+        professor.value = name;
+      }
+    }
+
+    if (cat) cat.addEventListener("change", function () { applyProfessor(true); });
+    if (subject) subject.addEventListener("change", function () { applyProfessor(true); });
+    applyProfessor(false);
   })();
 </script>
 {% endblock %}
