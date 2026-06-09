@@ -80,43 +80,109 @@
 .ac-back:hover { color: var(--color-primary); text-decoration: none; }
 .ac-form-title { margin-bottom: var(--space-lg); }
 
-/* ---- Anotação em modo somente-leitura ----
-   Leitura ≠ desabilitado: em vez de campos cinza e mortos, os widgets perdem a
-   moldura de input e viram texto legível em contraste pleno. Um chip discreto
-   com cadeado sinaliza o estado (sem depender só do ícone). */
+/* ---- Anotação em modo visualização ----
+   Vista limpa, tipo "ficha": título no topo, um bloco de metadados (rótulo →
+   valor) e o conteúdo no corpo. Nada editável — sem inputs, sem clique, sem
+   cursor de texto. O acento esmeralda é o único fio de marca. */
+.note-paper {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2xl);
+}
+
+.note-paper-head { margin-bottom: var(--space-xl); }
+.note-paper-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+.note-paper-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.7rem, 1.1rem + 2.4vw, 2.3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-foreground);
+}
+
+/* badge on-brand de "Visualização" */
 .ac-readonly-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-left: 10px;
-  vertical-align: middle;
-  padding: 3px 10px;
-  font-size: 0.72rem;
+  padding: 5px 12px;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--color-text-soft);
-  background: var(--color-muted);
+  color: var(--color-primary);
+  background: rgba(4, 120, 87, 0.10);
   border-radius: 999px;
 }
-.ac-readonly-chip .ico { color: var(--color-text-soft); }
-
-.ac-form.is-readonly .field-ico { color: var(--color-text-soft); }
-.ac-form.is-readonly .input {
-  border-color: transparent;
+.ac-readonly-chip .ico { color: var(--color-primary); }
+.note-done-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
   background: transparent;
-  box-shadow: none;
-  padding-left: 0;
-  opacity: 1;
-  cursor: default;
-  color: var(--color-foreground);
-  -webkit-text-fill-color: var(--color-foreground); /* texto disabled no Safari */
-  appearance: none;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
 }
-.ac-form.is-readonly select.input { background-image: none; }
-.ac-form.is-readonly .input:focus { outline: none; box-shadow: none; }
-.ac-form.is-readonly .field-check { cursor: default; }
-.ac-form.is-readonly .field-check input { opacity: 1; }
+
+/* Metadados: ficha em duas colunas, separada por espaço (sem grade de linhas) */
+.note-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg) var(--space-2xl);
+  margin: 0 0 var(--space-xl);
+  padding-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--color-border);
+}
+.note-meta-item { margin: 0; }
+.note-meta-item dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+.note-meta-item dt .ico { color: var(--color-primary); }
+.note-meta-item dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-foreground);
+}
+.note-meta-empty { color: var(--color-text-soft); font-weight: 500; }
+
+/* Corpo da anotação: medida de leitura confortável */
+.note-body {
+  max-width: 68ch;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--color-foreground);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .note-paper { padding: var(--space-xl) var(--space-lg); border-radius: var(--radius-md); }
+  .note-meta { grid-template-columns: 1fr; gap: var(--space-md); }
+}
 .ac-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 .field-check { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md); cursor: pointer; }
 .field-check input { width: 18px; height: 18px; accent-color: var(--color-primary); }
