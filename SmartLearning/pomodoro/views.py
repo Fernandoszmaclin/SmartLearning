@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -20,13 +21,13 @@ def _json(request):
 
 def _stats(user):
     today = timezone.localdate()
-    todays = PomodoroSession.objects.filter(
+    agg = PomodoroSession.objects.filter(
         user=user, completed=True, mode=PomodoroSession.Mode.WORK,
         ended_at__date=today,
-    )
+    ).aggregate(sessions=Count("id"), minutes=Sum("minutes"))
     return {
-        "sessions_today": todays.count(),
-        "minutes_today": sum(s.minutes for s in todays),
+        "sessions_today": agg["sessions"],
+        "minutes_today": agg["minutes"] or 0,
     }
 
 

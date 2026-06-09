@@ -53,6 +53,19 @@ def _user_page(request, page_id):
     return get_object_or_404(Page, id=page_id, owner=request.user)
 
 
+def _valid_kind(value):
+    """Devolve um Block.Kind válido ou None (descarta valores fora das choices)."""
+    return value if value in Block.Kind.values else None
+
+
+def _to_position(value):
+    """Converte um valor para posição (inteiro >= 0); None se inválido."""
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return None
+
+
 # ---------- workspace shell ----------
 
 @login_required
@@ -159,7 +172,7 @@ def api_page_create(request):
     page = Page.objects.create(
         owner=request.user,
         parent=parent,
-        is_folder=data.get("is_folder", False),
+        is_folder=bool(data.get("is_folder", False)),
         title=data.get("title") or ("Nova Pasta" if data.get("is_folder") else "Untitled"),
         icon=data.get("icon") or ("📁" if data.get("is_folder") else "📄"),
         position=(nxt or 0) + 1,
@@ -244,7 +257,7 @@ def api_page_detail(request, page_id):
 def api_block_create(request, page_id):
     page = _user_page(request, page_id)
     data = _json(request)
-    position = data.get("position")
+    position = _to_position(data.get("position"))
     if position is None:
         nxt = page.blocks.aggregate(m=Max("position"))["m"]
         position = (nxt or 0) + 1
@@ -255,7 +268,7 @@ def api_block_create(request, page_id):
         )
     block = Block.objects.create(
         page=page,
-        kind=data.get("kind", Block.Kind.PARAGRAPH),
+        kind=_valid_kind(data.get("kind")) or Block.Kind.PARAGRAPH,
         text=data.get("text", ""),
         position=position,
     )
@@ -296,12 +309,12 @@ def api_block_detail(request, block_id):
     data = _json(request)
     if "text" in data:
         block.text = data["text"]
-    if "kind" in data:
+    if "kind" in data and _valid_kind(data["kind"]):
         block.kind = data["kind"]
     if "checked" in data:
         block.checked = bool(data["checked"])
-    if "position" in data:
-        block.position = data["position"]
+    if "position" in data and (pos := _to_position(data["position"])) is not None:
+        block.position = pos
     block.save()
     return JsonResponse(_block_payload(block))
 

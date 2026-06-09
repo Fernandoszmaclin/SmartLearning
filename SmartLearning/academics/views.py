@@ -470,7 +470,6 @@ def subject_detail(request, pk):
         sort = "upcoming"
 
     grouped = _notes_for_subject(subject, sort)
-    from notes.models import Page
     estudos = Page.objects.filter(Q(subject=subject) | Q(parent__subject=subject)).order_by("-created_at")
     return render(request, "academics/subject_detail.html", {
         "subject": subject,
