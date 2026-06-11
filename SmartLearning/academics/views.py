@@ -178,7 +178,7 @@ def subject_create(request):
     if form.is_valid():
         subject = form.save(commit=False)
         subject.owner = request.user
-        # ignore duplicates silently
+        # ignora duplicatas silenciosamente
         if not Subject.objects.filter(owner=request.user, name=subject.name).exists():
             subject.save()
     return redirect(_safe_next(request) or "subject_list")
@@ -252,7 +252,17 @@ def dashboard(request):
             )
 
     all_pages = list(Page.objects.filter(owner=user).order_by("-created_at"))
-    
+
+    # Uma página pertence a uma matéria se ela é a pasta da matéria (subject=s)
+    # ou se está dentro dessa pasta (parent.subject=s). Indexa as páginas por
+    # matéria em uma única passada — antes era um loop aninhado por matéria.
+    folder_subject = {p.id: p.subject_id for p in all_pages if p.subject_id}
+    pages_by_subject = {}
+    for p in all_pages:
+        sid = p.subject_id or folder_subject.get(p.parent_id)
+        if sid:
+            pages_by_subject.setdefault(sid, []).append(p)
+
     # Matérias com suas anotações de estudo (agora Páginas vinculadas)
     subjects = list(
         Subject.objects.filter(owner=user).prefetch_related(
@@ -260,12 +270,10 @@ def dashboard(request):
         )
     )
     for s in subjects:
-        notes = list(s.notes.all())
-        # As páginas dessa matéria são as que tem subject=s (pastas) ou parent.subject=s (subpáginas)
-        subject_pages = [p for p in all_pages if p.subject_id == s.id or (p.parent_id and any(f.id == p.parent_id for f in all_pages if f.subject_id == s.id))]
+        subject_pages = pages_by_subject.get(s.id, [])
         s.estudo_notes = subject_pages[:4]
         s.estudo_count = len(subject_pages)
-        s.task_count = len(notes)
+        s.task_count = len(s.notes.all())
 
     return render(request, "academics/dashboard.html", {
         "display_name": user.get_full_name() or user.username,

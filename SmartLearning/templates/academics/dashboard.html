@@ -1,6 +1,11 @@
 {% extends "app_base.html" %}
+{% load static %}
 
 {% block title %}{{ display_name }} - SmartLearning{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}?v=2">
+{% endblock %}
 
 {% block app %}
 <div class="dash">

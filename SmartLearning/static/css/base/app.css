@@ -1313,3 +1313,111 @@ body.app.theme-dark {
 
 .form-section { margin-bottom: 2rem; }
 .form-section-title { font-size: 1.1rem; font-family: var(--font-heading); font-weight: 600; color: var(--color-foreground); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-muted); }
+
+
+/* ============================================================
+   MINIMALIST GREEN REFINEMENT — Matérias, detalhe e cartões
+   Achata sombras/raios e usa hairline #EAEAEA + hover tátil,
+   mantendo o verde da marca. Não toca na barra do app / menu /
+   busca. Carrega em todas as páginas do app (app_base).
+   ============================================================ */
+.subject-card,
+.subject-create-panel,
+.subject-note-card {
+  border: 1px solid #EAEAEA;
+  border-radius: 12px;
+  box-shadow: none;
+}
+.theme-dark .subject-card,
+.theme-dark .subject-create-panel,
+.theme-dark .subject-note-card { border-color: rgba(255,255,255,0.10); }
+
+/* Hover sem brilho/sombra: o card fica parado e só recebe um fundo
+   levemente tingido na cor da própria matéria; a faixa do topo cresce.
+   DNA do site (cor da matéria + faixa), sem luz nem movimento. */
+.subject-card,
+.subject-note-card { transition: background-color 200ms var(--ease-out); }
+.subject-card:hover,
+.subject-note-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #EAEAEA;
+  background: color-mix(in srgb, var(--subject-color, var(--color-primary)) 8%, var(--color-surface));
+}
+.theme-dark .subject-card:hover,
+.theme-dark .subject-note-card:hover {
+  border-color: rgba(255,255,255,0.10);
+  background: color-mix(in srgb, var(--subject-color, var(--color-primary)) 5%, var(--color-surface));
+}
+.subject-card::before { height: 3px; transition: height 220ms var(--ease-out); }
+.subject-card:hover::before { height: 6px; }
+
+/* Contadores por categoria: chip flat com hover verde */
+.subject-counts a {
+  border: 1px solid #EAEAEA; border-radius: 8px; box-shadow: none;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 120ms ease;
+}
+.subject-counts a:hover {
+  border-color: var(--color-primary);
+  background: rgba(4,120,87,0.06);
+  text-decoration: none;
+}
+.theme-dark .subject-counts a { border-color: rgba(255,255,255,0.10); }
+
+/* Ícone-botão de ação: hairline + hover verde (vermelho p/ remover) */
+.action-icon-btn { border-radius: 8px; transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease; }
+.action-icon-btn:hover { color: var(--color-primary); background: rgba(4,120,87,0.08); }
+.action-icon-btn.danger:hover { color: var(--color-destructive); background: rgba(239,68,68,0.08); }
+
+/* Empty-state: caixa hairline tracejada (em vez de só texto solto) */
+.empty-state { border: 1px dashed #EAEAEA; border-radius: 12px; }
+.theme-dark .empty-state { border-color: rgba(255,255,255,0.12); }
+
+/* Detalhe da matéria: aba de ordenação ativa em verde, cartões flat */
+.subject-toolbar a.is-active { color: var(--color-primary); }
+.subject-note-card { border-radius: 12px; }
+.subject-empty { color: var(--color-text-soft); }
+
+
+/* ============================================================
+   MINIMALIST GREEN REFINEMENT — Perfil (/perfil/)
+   Achata o cartão (sem gradiente/sombra pesada): superfície lisa,
+   hairline #EAEAEA, raio nítido. Mantém o verde da marca.
+   ============================================================ */
+.profile-card {
+  background: var(--color-surface);
+  border: 1px solid #EAEAEA;
+  border-radius: 12px;
+  box-shadow: none;
+  padding: clamp(1.75rem, 3vw, 2.5rem);
+}
+.theme-dark .profile-card { border-color: rgba(255,255,255,0.10); }
+
+/* Avatar: raio nítido (não arredondado demais), verde mantido, flat */
+.profile-photo { border-radius: 12px; box-shadow: none; }
+
+/* Nome/Sobrenome lado a lado mesmo sem academics.css nesta página */
+.profile-form .ac-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.profile-form textarea.input { width: 100%; }
+/* Tema é um select curto: largura automática + chevron customizado (a seta
+   nativa fica colada na borda); chevron verde logo após o texto. */
+.profile-form select.input {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 40px;
+  background-color: var(--color-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23047857' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.theme-dark .profile-form select.input {
+  background-color: var(--color-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2310B981' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+@media (max-width: 680px) { .profile-form .ac-form-row { grid-template-columns: 1fr; } }
+
+/* Divisores de seção como hairline limpa */
+.profile-form .form-section-title { border-bottom-color: #EAEAEA; }
+.theme-dark .profile-form .form-section-title { border-bottom-color: rgba(255,255,255,0.10); }

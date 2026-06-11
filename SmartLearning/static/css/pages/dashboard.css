@@ -1,0 +1,203 @@
+/* ============================================================
+   SmartLearning — Dashboard (Minha Área)
+   Minimalist restyle that KEEPS the site's emerald/zinc palette
+   (no warm/brown tones). CSS-only: the HTML in dashboard.html is
+   untouched. Everything is scoped under .dash so the rest of the
+   app shell keeps the standard design system.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.dash {
+  /* Cool zinc neutrals + emerald accent (site palette) */
+  --ink: #18181B;          /* zinc 900 — off-black, not pure */
+  --ink-soft: #71717A;     /* zinc 500 */
+  --surface: #FFFFFF;
+  --fill: #F4F4F5;         /* zinc 100 */
+  --hair: #EAEAEA;
+
+  --green: #047857;        /* emerald 700 (brand primary) */
+  --green-tint: rgba(4,120,87,0.08);
+
+  /* Semantic category accents (site brand trio) */
+  --c-estudo: #047857;
+  --c-prova: #7C3AED;
+  --c-trabalho: #EA580C;
+
+  --serif: 'Newsreader', 'Playfair Display', Georgia, serif;
+  --sans: 'SF Pro Display', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --d-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  gap: clamp(2rem, 4vw, 3rem);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+/* ---- Headings: editorial serif ---- */
+.dash .app-head h1 {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.dash .app-head .lead { color: var(--ink-soft); }
+.dash .dash-card-head h2,
+.dash .dash-section-head h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.dash .muted-text { color: var(--ink-soft); font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.01em; }
+.dash .dash-empty { color: var(--ink-soft); font-family: var(--sans); font-size: 0.9rem; }
+.dash .dash-section-head a { color: var(--green); font-weight: 600; font-family: var(--sans); font-size: 0.85rem; }
+.dash .dash-section-head a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- Buttons (header actions) ---- */
+.dash .btn { border-radius: 6px; font-family: var(--sans); font-weight: 500; }
+.dash .btn-primary {
+  background: var(--green); color: #fff; border: 1px solid var(--green);
+  box-shadow: none;
+}
+.dash .btn-primary:hover { background: color-mix(in srgb, var(--green) 88%, #000); color: #fff; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.dash .btn-primary:active { transform: scale(0.98); }
+.dash .btn-secondary {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--hair);
+  box-shadow: none;
+}
+.dash .btn-secondary:hover { background: var(--fill); color: var(--green); border-color: color-mix(in srgb, var(--green) 30%, var(--hair)); transform: translateY(-1px); box-shadow: none; }
+
+/* ============================================================
+   STAT CARDS — flat tiles, emerald/brand accents
+   ============================================================ */
+.dash .dash-stats { gap: 16px; }
+.dash .stat-card {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  padding: clamp(1.25rem, 2vw, 1.6rem);
+  box-shadow: none;
+  overflow: hidden;
+  transition: box-shadow 220ms var(--d-ease), transform 220ms var(--d-ease), border-color 220ms ease;
+}
+.dash .stat-card::before { width: 3px; background: var(--stat-c, var(--hair)); opacity: 0.7; }
+.dash a.stat-card:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-color: color-mix(in srgb, var(--stat-c, var(--green)) 30%, var(--hair)); }
+.dash a.stat-card:hover::before { opacity: 1; }
+.dash .stat-label {
+  font-family: var(--mono); font-weight: 500; font-size: 0.7rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft);
+}
+.dash .stat-num {
+  font-family: var(--serif); font-weight: 500; font-size: 2.6rem; line-height: 1;
+  color: var(--stat-c, var(--ink)); letter-spacing: -0.02em;
+}
+.dash .stat-sub { color: var(--ink-soft); font-family: var(--sans); font-size: 0.8rem; }
+.dash a.stat-card .stat-sub { color: var(--stat-c, var(--green)); font-weight: 600; }
+
+.dash .stat-estudo   { --stat-c: var(--c-estudo); }
+.dash .stat-prova    { --stat-c: var(--c-prova); }
+.dash .stat-trabalho { --stat-c: var(--c-trabalho); }
+
+/* ============================================================
+   CARDS (heatmap, week) — flat, hairline, near-zero shadow
+   ============================================================ */
+.dash .card {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  box-shadow: none;
+}
+.dash .card:hover { box-shadow: none; transform: none; }
+
+/* ---- Overdue alert (kept red, flattened) ---- */
+.dash .dash-alert {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.20);
+  border-radius: 12px;
+}
+.dash .dash-alert strong { color: var(--ink); }
+.dash .dash-alert p { color: var(--ink-soft); }
+
+/* ---- Overdue + week rows: flat with brand category rule ---- */
+.dash .dash-overdue li,
+.dash .week-list li {
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--hair);
+  border-radius: 8px;
+}
+.dash .dash-overdue li.cat-prova,
+.dash .week-list li.cat-prova { border-left-color: var(--c-prova); }
+.dash .dash-overdue li.cat-trabalho,
+.dash .week-list li.cat-trabalho { border-left-color: var(--c-trabalho); }
+.dash .dash-overdue li a,
+.dash .week-list li a { color: var(--ink); font-weight: 600; }
+.dash .dash-overdue li a:hover,
+.dash .week-list li a:hover { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+.dash .dash-overdue li span,
+.dash .week-list li span { color: var(--ink-soft); }
+.dash .week-list time { color: var(--ink-soft); font-family: var(--mono); font-weight: 500; }
+
+/* ============================================================
+   HEATMAP — emerald ramp (site green)
+   ============================================================ */
+.dash .heat-cell { border-radius: 3px; }
+.dash .heat-cell.lvl-0 { background: #EBF1F0; }
+.dash .heat-cell.lvl-1 { background: #B7E5DD; }
+.dash .heat-cell.lvl-2 { background: #6FD0C4; }
+.dash .heat-cell.lvl-3 { background: #25B0A1; }
+.dash .heat-cell.lvl-4 { background: var(--green); box-shadow: none; }
+.dash .heat-cell.is-future { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); opacity: 0.6; }
+.dash .heatmap-legend .heat-cell { box-shadow: inset 0 0 0 1px rgba(4,120,87,0.08); }
+.dash .heatmap-month,
+.dash .heatmap-days span,
+.dash .heatmap-legend { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); letter-spacing: 0.02em; }
+.dash .heatmap-grid .heat-cell:hover { box-shadow: 0 0 0 1px var(--green); }
+.dash .heatmap-scroll::-webkit-scrollbar-thumb { background: var(--hair); }
+
+/* ============================================================
+   SUBJECT CARDS — flat, keep user subject color accent
+   ============================================================ */
+.dash .subject-card { border: 1px solid var(--hair); border-radius: 12px; box-shadow: none; }
+.dash .subject-card::before { height: 3px; }
+.dash .subject-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); transform: translateY(-2px); }
+.dash .subject-card:hover::before { height: 4px; }
+.dash .subject-card h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.02em; color: var(--ink); }
+.dash .subject-card p { color: var(--ink-soft); }
+.dash .subject-note-mini a { color: var(--ink); }
+.dash .subject-note-mini a::before { content: "› "; color: var(--green); }
+.dash .subject-note-mini a:hover { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+.dash .subject-more { color: var(--green); font-family: var(--sans); font-size: 0.85rem; font-weight: 600; }
+.dash .subject-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+body.theme-dark .dash {
+  --ink: #ECECEE;
+  --ink-soft: #A1A1AA;
+  --surface: #18181B;
+  --fill: #27272A;
+  --hair: rgba(255,255,255,0.10);
+  --green: #10B981;
+  --green-tint: rgba(16,185,129,0.12);
+}
+body.theme-dark .dash .btn-primary { background: var(--green); color: #06231B; border-color: var(--green); }
+body.theme-dark .dash .btn-primary:hover { background: color-mix(in srgb, var(--green) 88%, #fff); }
+body.theme-dark .dash .heat-cell.lvl-0 { background: rgba(255,255,255,0.05); }
+body.theme-dark .dash .heat-cell.lvl-1 { background: rgba(16,185,129,0.30); }
+body.theme-dark .dash .heat-cell.lvl-2 { background: rgba(16,185,129,0.50); }
+body.theme-dark .dash .heat-cell.lvl-3 { background: rgba(16,185,129,0.72); }
+body.theme-dark .dash .heat-cell.lvl-4 { background: var(--green); }
+body.theme-dark .dash .heat-cell.is-future { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); }
+body.theme-dark .dash .heatmap-grid .heat-cell:hover { box-shadow: 0 0 0 1px var(--green); }
+
+/* ============================================================
+   MOTION SAFETY
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .dash .stat-card, .dash .subject-card, .dash .btn { transition: none; }
+  .dash .stat-card:hover, .dash .subject-card:hover, .dash .btn-primary:hover, .dash .btn-secondary:hover { transform: none; }
+}

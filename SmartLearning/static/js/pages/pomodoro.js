@@ -1,16 +1,17 @@
-/* SmartLearning — Pomodoro timer.
-   Work / break cycles, focus logging, today stats. */
+/* SmartLearning — Timer Pomodoro.
+   Ciclos de foco/pausa, registro de sessões e estatísticas do dia. */
 (function () {
   "use strict";
 
-  function getCookie(name) {
-    const m = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+  const getCookie = (name) => {
+    const m = document.cookie.match(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`);
     return m ? m.pop() : "";
-  }
+  };
   const CSRF = getCookie("csrftoken");
 
   const root = document.getElementById("pomodoro");
   if (!root) return;
+  
   const LOG_URL = root.dataset.logUrl || "/pomodoro/api/pomodoro/log/";
   const STATS_URL = root.dataset.statsUrl || "/pomodoro/api/pomodoro/stats/";
   const pageId = root.dataset.pageId ? Number(root.dataset.pageId) : null;
@@ -30,8 +31,37 @@
 
   const MODE = { WORK: "work", SHORT: "short_break", LONG: "long_break" };
   const LABELS = { work: "Foco", short_break: "Pausa curta", long_break: "Pausa longa" };
-
   const SETTINGS_KEY = "sl-pomodoro-settings";
+
+  const clampInt = (v, min, max, fallback) => {
+    let n = parseInt(v, 10);
+    if (isNaN(n)) n = fallback;
+    return Math.min(max, Math.max(min, n));
+  };
+
+  const loadSettings = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      if (s.work) setWork.value = s.work;
+      if (s.short) setShort.value = s.short;
+      if (s.long) setLong.value = s.long;
+    } catch (e) { /* ignora */ }
+  };
+
+  const saveSettings = () => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      work: clampInt(setWork.value, 1, 120, 25),
+      short: clampInt(setShort.value, 1, 60, 5),
+      long: clampInt(setLong.value, 1, 60, 15),
+    }));
+  };
+
+  const minutesFor = (m) => {
+    if (m === MODE.WORK) return clampInt(setWork.value, 1, 120, 25);
+    if (m === MODE.SHORT) return clampInt(setShort.value, 1, 60, 5);
+    return clampInt(setLong.value, 1, 60, 15);
+  };
+
   loadSettings();
 
   let mode = MODE.WORK;
@@ -41,49 +71,26 @@
   let workStreak = 0;
   let audioCtx = null;
 
-  function loadSettings() {
-    try {
-      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-      if (s.work) setWork.value = s.work;
-      if (s.short) setShort.value = s.short;
-      if (s.long) setLong.value = s.long;
-    } catch (e) { /* ignore */ }
-  }
-  function saveSettings() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-      work: clampInt(setWork.value, 1, 120, 25),
-      short: clampInt(setShort.value, 1, 60, 5),
-      long: clampInt(setLong.value, 1, 60, 15),
-    }));
-  }
-  function clampInt(v, min, max, fallback) {
-    let n = parseInt(v, 10);
-    if (isNaN(n)) n = fallback;
-    return Math.min(max, Math.max(min, n));
-  }
-  function minutesFor(m) {
-    if (m === MODE.WORK) return clampInt(setWork.value, 1, 120, 25);
-    if (m === MODE.SHORT) return clampInt(setShort.value, 1, 60, 5);
-    return clampInt(setLong.value, 1, 60, 15);
-  }
-
-  function render() {
+  const render = () => {
     const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
     const ss = String(remaining % 60).padStart(2, "0");
-    timeEl.textContent = mm + ":" + ss;
+    timeEl.textContent = `${mm}:${ss}`;
     modeEl.textContent = LABELS[mode];
     toggleBtn.textContent = running ? "Pausar" : "Começar";
     root.classList.toggle("is-break", mode !== MODE.WORK);
-    document.title = (running ? timeEl.textContent + " · " : "") + LABELS[mode] + " — SmartLearning";
-  }
+    document.title = `${running ? timeEl.textContent + " · " : ""}SmartLearning`;
+  };
 
-  function tick() {
+  const tick = () => {
     remaining -= 1;
-    if (remaining <= 0) { complete(); return; }
+    if (remaining <= 0) {
+      complete();
+      return;
+    }
     render();
-  }
+  };
 
-  function start() {
+  const start = () => {
     if (running) return;
     if (!audioCtx) {
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
@@ -94,56 +101,47 @@
     running = true;
     timer = setInterval(tick, 1000);
     render();
-  }
-  function pause() {
+  };
+
+  const pause = () => {
     running = false;
     clearInterval(timer);
     render();
-  }
-  function toggle() { running ? pause() : start(); }
+  };
 
-  function reset() {
+  const toggle = () => (running ? pause() : start());
+
+  const reset = () => {
     pause();
     remaining = minutesFor(mode) * 60;
     render();
-  }
+  };
 
-  function nextMode() {
+  const nextMode = () => {
     if (mode === MODE.WORK) {
       workStreak += 1;
       return (workStreak % 4 === 0) ? MODE.LONG : MODE.SHORT;
     }
     return MODE.WORK;
-  }
+  };
 
-  function goTo(newMode, autostart) {
+  const goTo = (newMode, autostart) => {
     mode = newMode;
     remaining = minutesFor(mode) * 60;
     pause();
     render();
     if (autostart) start();
-  }
+  };
 
-  function skip() { goTo(nextMode(), false); }
+  const skip = () => goTo(nextMode(), false);
 
-  async function complete() {
-    pause();
-    const finished = mode;
-    notify(finished);
-    beep();
-    if (finished === MODE.WORK) {
-      await logSession(minutesFor(MODE.WORK));
-    }
-    goTo(nextMode(), true); // auto-start the next interval
-  }
-
-  async function logSession(minutes) {
+  const logSession = async (minutes) => {
     try {
       const res = await fetch(LOG_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF },
         body: JSON.stringify({
-          minutes: minutes,
+          minutes,
           mode: MODE.WORK,
           label: taskEl.value.trim(),
           page: pageId,
@@ -155,23 +153,24 @@
         if (statMinutes) statMinutes.textContent = data.minutes_today;
       }
     } catch (e) { console.error(e); }
-  }
+  };
 
-  function notify(finishedMode) {
+  const notify = (finishedMode) => {
     const msg = finishedMode === MODE.WORK
       ? "Foco concluído — hora da pausa!"
       : "Pausa acabou — de volta ao foco.";
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("SmartLearning", { body: msg });
     }
-  }
+  };
 
-  function beep() {
+  const beep = () => {
     if (!audioCtx) return;
     try {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
       osc.type = "sine";
       osc.frequency.value = 660;
       gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
@@ -179,10 +178,21 @@
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.4);
-    } catch (e) { /* ignore */ }
-  }
+    } catch (e) { /* ignora */ }
+  };
 
-  // ---- wire controls ----
+  const complete = async () => {
+    pause();
+    const finished = mode;
+    notify(finished);
+    beep();
+    if (finished === MODE.WORK) {
+      await logSession(minutesFor(MODE.WORK));
+    }
+    goTo(nextMode(), true); // inicia o próximo intervalo automaticamente
+  };
+
+  // ---- liga os controles ----
   toggleBtn.addEventListener("click", toggle);
   resetBtn.addEventListener("click", reset);
   skipBtn.addEventListener("click", skip);
@@ -195,13 +205,15 @@
     });
   });
 
-  function refreshStats() {
-    fetch(STATS_URL).then((r) => (r.ok ? r.json() : null)).then((d) => {
-      if (!d) return;
+  const refreshStats = async () => {
+    try {
+      const res = await fetch(STATS_URL);
+      if (!res.ok) return;
+      const d = await res.json();
       if (statSessions) statSessions.textContent = d.sessions_today;
       if (statMinutes) statMinutes.textContent = d.minutes_today;
-    }).catch(function () {});
-  }
+    } catch (e) { /* ignora */ }
+  };
 
   render();
   refreshStats();

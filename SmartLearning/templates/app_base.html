@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}SmartLearning{% endblock %}</title>
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'css/base/main.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'css/base/app.css' %}?v=13">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="app is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
@@ -133,8 +133,8 @@
 
   {% include "_pomodoro.html" %}
 
-  <script src="{% static 'js/reveal.js' %}"></script>
-  <script src="{% static 'js/pomodoro.js' %}"></script>
+  <script src="{% static 'js/base/reveal.js' %}"></script>
+  <script src="{% static 'js/pages/pomodoro.js' %}"></script>
   {% block extra_js %}{% endblock %}
 
 

@@ -1,5 +1,3 @@
-import json
-
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum
 from django.http import JsonResponse
@@ -8,15 +6,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from notes.models import Page
+from SmartLearning.http import parse_json_body
 
 from .models import PomodoroSession
-
-
-def _json(request):
-    try:
-        return json.loads(request.body or "{}")
-    except (ValueError, TypeError):
-        return {}
 
 
 def _stats(user):
@@ -35,7 +27,7 @@ def _stats(user):
 @require_http_methods(["POST"])
 def api_log_session(request):
     """Record a completed pomodoro interval."""
-    data = _json(request)
+    data = parse_json_body(request)
     page = None
     if data.get("page"):
         page = get_object_or_404(Page, id=data["page"], owner=request.user)
