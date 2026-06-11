@@ -10,7 +10,7 @@
   <meta property="og:title" content="SmartLearning: sua área de estudos">
   <meta property="og:description" content="Anotações no estilo Notion, calendário acadêmico e Pomodoro num lugar só.">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=7">
+  <link rel="stylesheet" href="{% static 'css/base/main.css' %}?v=9">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="is-loading{% if active_profile.theme == 'dark' %} theme-dark{% endif %}">
@@ -119,7 +119,7 @@
       </nav>
     </div>
   </footer>
-  <script src="{% static 'js/reveal.js' %}?v=2"></script>
+  <script src="{% static 'js/base/reveal.js' %}?v=2"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const fluidTrigger = document.getElementById('fluid-menu-trigger');

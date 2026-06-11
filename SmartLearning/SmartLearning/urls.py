@@ -5,7 +5,7 @@ from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
-    # Rotas de pginas abertas e marketing
+    # Páginas abertas e marketing
     path('', views.landing_page, name='landing'),
     path('termos/', views.terms_view, name='terms'),
     path('privacidade/', views.privacy_view, name='privacy'),
@@ -13,23 +13,23 @@ urlpatterns = [
     # Busca global
     path('busca/', views.search, name='search'),
 
-    # Autenticao (login, logout, password_reset, etc.)
+    # Autenticação (login, logout, reset de senha)
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/', include('django.contrib.auth.urls')),
 
     # Perfis
     path('perfil/', include('profiles.urls')),
 
-    # Workspace principal (Notion-like)
+    # Workspace principal (estilo Notion)
     path('workspace/', include('notes.urls')),
 
-    # Redirecionamentos de rotas antigas
+    # Redireciona rotas antigas
     path('courses/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
     path('academico/estudos/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
     path('materias/', RedirectView.as_view(pattern_name='subject_list', permanent=True)),
 
-    # Apps acadmicos / matrias
-    path('academico/', include('academics.urls')),             # anotaes, minha-rea, calendrio, matrias
+    # Apps acadêmicos / matérias
+    path('academico/', include('academics.urls')),             # anotações, calendário, matérias
 
     # Pomodoro nativo
     path('pomodoro/', include('pomodoro.urls')),

@@ -12,19 +12,13 @@ from django.utils.text import get_valid_filename
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
+from SmartLearning.http import parse_json_body
 from SmartLearning.security import validate_workspace_file
 
 from .models import Block, Page
 
 
-# ---------- helpers ----------
-
-def _json(request):
-    try:
-        return json.loads(request.body or "{}")
-    except (ValueError, TypeError):
-        return {}
-
+# ---------- auxiliares ----------
 
 def _page_payload(page):
     return {
@@ -66,7 +60,7 @@ def _to_position(value):
         return None
 
 
-# ---------- workspace shell ----------
+# ---------- estrutura do workspace ----------
 
 @login_required
 @ensure_csrf_cookie
@@ -156,12 +150,12 @@ def workspace(request, page_id=None):
     })
 
 
-# ---------- pages API ----------
+# ---------- API de páginas ----------
 
 @login_required
 @require_http_methods(["POST"])
 def api_page_create(request):
-    data = _json(request)
+    data = parse_json_body(request)
     parent = _user_page(request, data["parent"]) if data.get("parent") else None
     
     if parent and not parent.is_folder:
@@ -189,7 +183,7 @@ def api_page_move(request, page_id):
     body: {"parent": <id|null>, "order": [ids...]}  (order opcional)
     """
     page = _user_page(request, page_id)
-    data = _json(request)
+    data = parse_json_body(request)
 
     parent_id = data.get("parent")
     new_parent = _user_page(request, parent_id) if parent_id else None
@@ -238,7 +232,7 @@ def api_page_detail(request, page_id):
         page.delete()
         return JsonResponse({"deleted": page_id})
 
-    data = _json(request)
+    data = parse_json_body(request)
     if "title" in data:
         page.title = data["title"]
     if data.get("icon"):
@@ -251,19 +245,19 @@ def api_page_detail(request, page_id):
     return JsonResponse(_page_payload(page))
 
 
-# ---------- blocks API ----------
+# ---------- API de blocos ----------
 
 @login_required
 @require_http_methods(["POST"])
 def api_block_create(request, page_id):
     page = _user_page(request, page_id)
-    data = _json(request)
+    data = parse_json_body(request)
     position = _to_position(data.get("position"))
     if position is None:
         nxt = page.blocks.aggregate(m=Max("position"))["m"]
         position = (nxt or 0) + 1
     else:
-        # make room: push existing blocks at/after this position down by one
+        # abre espaço: empurra os blocos a partir desta posição uma casa adiante
         Block.objects.filter(page=page, position__gte=position).update(
             position=F("position") + 1
         )
@@ -280,7 +274,7 @@ def api_block_create(request, page_id):
 @require_http_methods(["POST"])
 def api_block_reorder(request, page_id):
     page = _user_page(request, page_id)
-    order = _json(request).get("order", [])
+    order = parse_json_body(request).get("order", [])
     for index, block_id in enumerate(order):
         Block.objects.filter(id=block_id, page=page).update(position=index)
     return JsonResponse({"ok": True})
@@ -294,7 +288,7 @@ def api_block_detail(request, block_id):
         block.delete()
         return JsonResponse({"deleted": block_id})
 
-    # For file uploads, we might use POST with multipart data
+    # Upload de arquivo usa POST com multipart
     if request.method == "POST" and request.FILES:
         if "file" in request.FILES:
             uploaded_file = request.FILES["file"]
@@ -307,7 +301,7 @@ def api_block_detail(request, block_id):
             block.save()
         return JsonResponse(_block_payload(block))
 
-    data = _json(request)
+    data = parse_json_body(request)
     if "text" in data:
         block.text = data["text"]
     if "kind" in data and _valid_kind(data["kind"]):
@@ -320,7 +314,7 @@ def api_block_detail(request, block_id):
     return JsonResponse(_block_payload(block))
 
 
-# ---------- exports & backup ----------
+# ---------- exportações & backup ----------
 
 @login_required
 def export_markdown(request, page_id):
@@ -348,7 +342,7 @@ def export_markdown(request, page_id):
             md_lines.append("---")
         else:
             md_lines.append(b.text)
-        md_lines.append("")  # space between blocks
+        md_lines.append("")  # espaço entre blocos
 
     content = "\n".join(md_lines)
     response = HttpResponse(content, content_type="text/markdown; charset=utf-8")
