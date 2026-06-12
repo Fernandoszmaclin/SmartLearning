@@ -5,7 +5,7 @@ from SmartLearning.security import validate_workspace_file
 
 
 class Page(models.Model):
-    """A Notion-like document. Pages can nest inside other pages."""
+    """Documento estilo Notion; páginas podem aninhar em outras páginas."""
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -53,7 +53,7 @@ class Page(models.Model):
 
 
 class Block(models.Model):
-    """A single editable block inside a Page (Notion-style)."""
+    """Bloco editável dentro de uma Page (estilo Notion)."""
 
     class Kind(models.TextChoices):
         PARAGRAPH = "paragraph", "Text"

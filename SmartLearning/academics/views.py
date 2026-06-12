@@ -3,7 +3,7 @@ from collections import Counter
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Max, Prefetch, Count, F, Q
+from django.db.models import Count, F, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -25,11 +25,10 @@ MONTHS_ABBR_PT = [
 ]
 WEEKDAYS_PT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
-# Quantas semanas o heatmap de estudo (estilo GitHub) mostra.
+# Semanas exibidas no heatmap de estudo (estilo GitHub).
 HEATMAP_WEEKS = 26
 
-# Rótulos de dia da semana exibidos à esquerda do heatmap (Dom..Sáb).
-# Só Seg/Qua/Sex recebem texto, como no GitHub.
+# Rótulos à esquerda do heatmap (Dom..Sáb); só Seg/Qua/Sex, como no GitHub.
 HEATMAP_DAY_LABELS = ["", "Seg", "", "Qua", "", "Sex", ""]
 
 
@@ -46,56 +45,16 @@ def _inherit_subject_professor(note):
         note.professor = note.subject.professor
 
 
-def _next_page_position(user, parent):
-    m = Page.objects.filter(owner=user, parent=parent).aggregate(m=Max("position"))["m"]
-    return (m or 0) + 1
-
-
-def _auto_subject_folder(user, subject):
-    """Pasta (página raiz) da matéria; cria se não existir. None quando sem matéria."""
-    if subject is None:
-        return None
-    folder = Page.objects.filter(
-        owner=user, subject=subject, parent__isnull=True
-    ).first()
-    if folder is None:
-        folder = Page.objects.create(
-            owner=user, parent=None, subject=subject,
-            title=subject.name, icon="📁",
-            position=_next_page_position(user, None),
-        )
-    return folder
-
-
 def _safe_next(request):
-    """Devolve o ?next= se ele apontar para dentro do próprio site; senão None."""
+    """Devolve o ?next= se for URL interna; senão None."""
     return safe_redirect_url(request, request.POST.get("next") or request.GET.get("next"))
 
 
 def _post_save_redirect(note, next_url=None):
-    """Para onde ir depois de salvar.
-
-    Trabalhos/provas voltam para o ``next`` (ex.: a gaveta "Anotações" do
-    workspace) quando houver; senão caem na própria gaveta.
-    """
+    """Depois de salvar: volta para o ``next`` quando houver; senão abre a gaveta."""
     if next_url:
         return redirect(next_url)
     return redirect(f"{reverse('workspace')}?tasks=open")
-
-
-def _subject_folders(user):
-    """Mapa {id_da_matéria: título da pasta} das matérias que já têm pasta."""
-    folders = Page.objects.filter(
-        owner=user, parent__isnull=True, subject__isnull=False
-    ).select_related("subject")
-    return {str(f.subject_id): f.display_title for f in folders}
-
-
-def _target_folder(form, user, subject):
-    """Pasta-destino da página: a da matéria se o usuário marcar a opção; senão raiz."""
-    if subject and form.cleaned_data.get("use_subject_folder"):
-        return _auto_subject_folder(user, subject)
-    return None
 
 
 @login_required
@@ -123,7 +82,6 @@ def note_create(request):
         "form": form,
         "mode": "new",
         "subject_professors": _subject_professors(request.user),
-        "subject_folders": _subject_folders(request.user),
         "safe_next": _safe_next(request),
     })
 
@@ -137,18 +95,12 @@ def note_edit(request, pk):
             form.save()
             return _post_save_redirect(note, _safe_next(request))
     else:
-        initial = {}
-        page = note.workspace_page
-        if (page and page.parent_id and note.subject_id
-                and page.parent.subject_id == note.subject_id):
-            initial["use_subject_folder"] = True
-        form = NoteForm(instance=note, owner=request.user, initial=initial)
+        form = NoteForm(instance=note, owner=request.user)
     return render(request, "academics/note_form.html", {
         "form": form,
         "mode": "edit",
         "note": note,
         "subject_professors": _subject_professors(request.user),
-        "subject_folders": _subject_folders(request.user),
         "safe_next": _safe_next(request),
     })
 
@@ -184,6 +136,60 @@ def subject_create(request):
     return redirect(_safe_next(request) or "subject_list")
 
 
+def _heat_level(count, day, today):
+    """Intensidade 0-4 da célula; -1 apaga dias futuros."""
+    if day > today:
+        return -1
+    if count <= 2:
+        return count
+    return 3 if count <= 4 else 4
+
+
+def _heatmap(pages, today):
+    """Grade estilo GitHub: colunas de 7 dias (Dom..Sáb) com rótulos de mês.
+
+    Devolve (weeks, months, total criado no período).
+    """
+    this_sunday = today - timedelta(days=(today.weekday() + 1) % 7)
+    grid_start = this_sunday - timedelta(weeks=HEATMAP_WEEKS - 1)
+
+    per_day = Counter()
+    for created in pages.filter(
+        created_at__date__gte=grid_start
+    ).values_list("created_at", flat=True):
+        per_day[timezone.localdate(created)] += 1
+
+    weeks, months, total = [], [], 0
+    for w in range(HEATMAP_WEEKS):
+        col_start = grid_start + timedelta(weeks=w)
+        col = []
+        for d in range(7):
+            day = col_start + timedelta(days=d)
+            cnt = per_day.get(day, 0)
+            if day <= today:
+                total += cnt
+            col.append({"date": day, "count": cnt, "level": _heat_level(cnt, day, today)})
+        weeks.append(col)
+
+        month = col_start.month
+        if months and months[-1]["month"] == month:
+            months[-1]["span"] += 1
+        else:
+            months.append({"month": month, "label": MONTHS_ABBR_PT[month], "span": 1})
+    return weeks, months, total
+
+
+def _pages_by_subject(pages):
+    """Agrupa páginas por matéria: a da própria página ou a da pasta-mãe."""
+    folder_subject = {p.id: p.subject_id for p in pages if p.subject_id}
+    grouped = {}
+    for p in pages:
+        sid = p.subject_id or folder_subject.get(p.parent_id)
+        if sid:
+            grouped.setdefault(sid, []).append(p)
+    return grouped
+
+
 @login_required
 def dashboard(request):
     """Minha área: panorama de estudos do usuário."""
@@ -195,9 +201,9 @@ def dashboard(request):
     C = Note.Category
     base = Note.objects.filter(owner=user)
     pages_base = Page.objects.filter(owner=user)
-    # Totais por categoria (incluem terminados — contam aqui em "Minha área").
+    # Totais por categoria (incluem terminados).
     counts = {c: base.filter(category=c).count() for c, _ in C.choices}
-    counts["estudo"] = pages_base.count()  # Estudos agora são Páginas
+    counts["estudo"] = pages_base.count()  # Estudos são Páginas do workspace
     total_notes = base.count() + pages_base.count()
 
     tasks = base.select_related("subject")
@@ -206,64 +212,12 @@ def dashboard(request):
     ).order_by("due_date")
     overdue = tasks.filter(is_done=False, due_date__lt=today).order_by("due_date")
 
-    # Heatmap de estudo estilo GitHub: um quadradinho por dia, últimas N semanas.
-    # Semana começa no domingo (igual ao calendário). today.weekday(): Seg=0..Dom=6.
-    this_sunday = today - timedelta(days=(today.weekday() + 1) % 7)
-    grid_start = this_sunday - timedelta(weeks=HEATMAP_WEEKS - 1)
+    heat_weeks, heat_months, heat_total = _heatmap(pages_base, today)
 
-    per_day = Counter()
-    for created in pages_base.filter(
-        created_at__date__gte=grid_start
-    ).values_list("created_at", flat=True):
-        per_day[timezone.localdate(created)] += 1
+    all_pages = list(pages_base.order_by("-created_at"))
+    pages_by_subject = _pages_by_subject(all_pages)
 
-    heat_weeks = []          # lista de colunas; cada coluna = 7 dias (Dom..Sáb)
-    heat_months = []         # rótulos de mês: {"label", "span"}
-    heat_total = 0
-    for w in range(HEATMAP_WEEKS):
-        col_start = grid_start + timedelta(weeks=w)
-        col = []
-        for d in range(7):
-            day = col_start + timedelta(days=d)
-            cnt = per_day.get(day, 0)
-            if day > today:
-                level = -1            # dia futuro: célula apagada
-            elif cnt == 0:
-                level = 0
-            elif cnt == 1:
-                level = 1
-            elif cnt == 2:
-                level = 2
-            elif cnt <= 4:
-                level = 3
-            else:
-                level = 4
-            if day <= today:
-                heat_total += cnt
-            col.append({"date": day, "count": cnt, "level": level})
-        heat_weeks.append(col)
-
-        month = col_start.month
-        if heat_months and heat_months[-1]["month"] == month:
-            heat_months[-1]["span"] += 1
-        else:
-            heat_months.append(
-                {"month": month, "label": MONTHS_ABBR_PT[month], "span": 1}
-            )
-
-    all_pages = list(Page.objects.filter(owner=user).order_by("-created_at"))
-
-    # Uma página pertence a uma matéria se ela é a pasta da matéria (subject=s)
-    # ou se está dentro dessa pasta (parent.subject=s). Indexa as páginas por
-    # matéria em uma única passada — antes era um loop aninhado por matéria.
-    folder_subject = {p.id: p.subject_id for p in all_pages if p.subject_id}
-    pages_by_subject = {}
-    for p in all_pages:
-        sid = p.subject_id or folder_subject.get(p.parent_id)
-        if sid:
-            pages_by_subject.setdefault(sid, []).append(p)
-
-    # Matérias com suas anotações de estudo (agora Páginas vinculadas)
+    # Matérias com suas anotações e páginas vinculadas.
     subjects = list(
         Subject.objects.filter(owner=user).prefetch_related(
             Prefetch("notes", queryset=Note.objects.order_by("-created_at"))
@@ -357,16 +311,13 @@ def calendar_view(request):
 
 @login_required
 def weekly_plan(request):
-    """
-    Plano Semanal Inteligente:
-    Distribui tarefas pendentes nos próximos 7 dias com base em urgência, dificuldade e tempo disponível.
-    """
+    """Distribui tarefas pendentes nos próximos 7 dias por urgência, dificuldade e tempo."""
     today = timezone.localdate()
-    
-    # Tempo disponível por dia (default: 120 minutos)
+
+    # Minutos disponíveis por dia (default 120, mínimo 15).
     try:
-        available_time_per_day = int(request.GET.get("available_time", 120))
-    except ValueError:
+        available_time_per_day = max(15, int(request.GET.get("available_time", 120)))
+    except (TypeError, ValueError):
         available_time_per_day = 120
 
     tasks = Note.objects.filter(
@@ -429,7 +380,7 @@ def weekly_plan(request):
     })
 
 
-def _subject_queryset(user):
+def _subjects_with_counts(user):
     return (
         Subject.objects.filter(owner=user)
         .annotate(
@@ -439,7 +390,6 @@ def _subject_queryset(user):
         )
         .order_by("name")
     )
-
 
 
 def _notes_for_subject(subject, sort):
@@ -456,14 +406,12 @@ def _notes_for_subject(subject, sort):
     }
 
 
-
 @login_required
 def subject_list(request):
     return render(request, "academics/subject_list.html", {
-        "subjects": _subject_queryset(request.user),
+        "subjects": _subjects_with_counts(request.user),
         "subject_form": SubjectForm(),
     })
-
 
 
 @login_required
@@ -474,7 +422,11 @@ def subject_detail(request, pk):
         sort = "upcoming"
 
     grouped = _notes_for_subject(subject, sort)
-    estudos = Page.objects.filter(Q(subject=subject) | Q(parent__subject=subject)).order_by("-created_at")
+    estudos = (
+        Page.objects.filter(owner=request.user)
+        .filter(Q(subject=subject) | Q(parent__subject=subject))
+        .order_by("-created_at")
+    )
     return render(request, "academics/subject_detail.html", {
         "subject": subject,
         "sort": sort,
@@ -484,7 +436,6 @@ def subject_detail(request, pk):
             ("trabalho", "Trabalho", grouped[Note.Category.TRABALHO]),
         ],
     })
-
 
 
 @login_required
@@ -501,7 +452,6 @@ def subject_edit(request, pk):
         "form": form,
         "subject": subject,
     })
-
 
 
 @login_required

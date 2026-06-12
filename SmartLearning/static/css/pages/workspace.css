@@ -33,7 +33,7 @@
 .tree { list-style: none; margin: 0; padding: 0; }
 .tree .tree { margin-left: var(--space-md); border-left: 1px solid var(--color-muted); }
 .tree-row {
-  display: flex; align-items: center; border-radius: 6px; padding-right: 2px;
+  display: flex; align-items: center; border-radius: 4px; padding-right: 2px;
   transition: background-color 150ms ease;
 }
 .tree-row:hover { background: var(--color-muted); }
@@ -119,7 +119,10 @@
   overflow-y: auto; min-height: 0;
   scrollbar-color: rgba(5,150,105,0.48) rgba(5,150,105,0.08);
   scrollbar-width: thin;
+  transition: opacity 0.15s ease;
 }
+/* Navegação SPA: esmaece o editor enquanto a próxima página chega. */
+.editor-pane.is-loading { opacity: 0.55; pointer-events: none; }
 .editor-pane::-webkit-scrollbar,
 .sidebar-scroll::-webkit-scrollbar,
 .block-menu::-webkit-scrollbar,
@@ -183,7 +186,6 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
   padding: 5px 0; border-radius: 8px; transition: background-color 120ms ease, transform 120ms ease;
 }
 .emoji-cell:hover { background: var(--color-muted); transform: scale(1.15); }
-.theme-dark .emoji-pop { background: var(--color-surface); border-color: #24524D; }
 .theme-dark .emoji-cell:hover { background: rgba(255,255,255,0.08); }
 @media (prefers-reduced-motion: reduce) { .emoji-cell:hover { transform: none; } }
 .icon-btn {
@@ -285,11 +287,11 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
 .add-block-btn {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   margin: 16px auto 0; padding: 6px 16px; width: fit-content;
-  background: transparent; border: 1px dashed rgba(5,150,105,0.3); color: var(--color-text-soft);
+  background: transparent; border: 1px dashed var(--color-border); color: var(--color-text-soft);
   font-size: 0.85rem; font-weight: 500; cursor: pointer; border-radius: var(--radius-md); transition: all 150ms ease;
 }
 @media (hover: hover) {
-  .add-block-btn:hover { background: rgba(5,150,105,0.04); color: var(--color-primary); border-color: rgba(5,150,105,0.5); transform: translateY(-1px); }
+  .add-block-btn:hover { background: rgba(5,150,105,0.04); color: var(--color-primary); border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border)); transform: translateY(-1px); }
 }
 .add-block-btn:active { background: rgba(5,150,105,0.08); transform: translateY(0); }
 .add-block-btn:focus-visible { outline: 3px solid var(--color-ring); outline-offset: 2px; }
@@ -297,7 +299,7 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
 /* ---------- Slash command menu ---------- */
 .slash-menu {
   position: absolute; z-index: 50; background: var(--color-surface);
-  border: 1px solid rgba(5,150,105,0.12); border-radius: 12px;
+  border: 1px solid var(--color-border); border-radius: 12px;
   box-shadow: var(--shadow-xl); padding: 8px; min-width: 220px; max-height: 320px; overflow-y: auto;
 }
 .slash-item {
@@ -317,7 +319,7 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
   max-height: 340px;
   overflow-y: auto;
   padding: 8px;
-  border: 1px solid rgba(5,150,105,0.12);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
   box-shadow: var(--shadow-xl);
@@ -374,11 +376,6 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
   .theme-dark .add-block-btn:hover {
     background: rgba(255,255,255,0.07);
   }
-}
-.theme-dark .slash-menu,
-.theme-dark .block-menu {
-  background: var(--color-surface);
-  border-color: #24524D;
 }
 .theme-dark .block-menu-item.danger:hover {
   background-color: var(--color-surface);
@@ -659,7 +656,7 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
   display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
   width: fit-content; max-width: 100%;
   margin-bottom: var(--space-md); padding: 6px 12px 6px 8px;
-  border-radius: 999px; border: 1px solid rgba(5,150,105,0.18);
+  border-radius: 999px; border: 1px solid var(--color-border);
   background: rgba(5,150,105,0.05); color: var(--color-text-soft); font-size: 0.82rem;
   transition: border-color 220ms ease, background 220ms ease, transform 220ms var(--ease-out);
 }
@@ -683,7 +680,7 @@ a.crumb:hover { background: var(--color-muted); color: var(--color-foreground); 
 .theme-dark .tasks-close:hover { background: var(--color-surface); }
 .theme-dark .tasks-item-due.is-overdue,
 .theme-dark .doc-ac-due.is-overdue { color: #FCA5A5; }
-.theme-dark .doc-ac-chip { border-color: rgba(148,163,184,0.22); background: rgba(5,150,105,0.12); }
+.theme-dark .doc-ac-chip { background: rgba(5,150,105,0.12); }
 
 @media (prefers-reduced-motion: reduce) {
   .tasks-scrim, .tasks-panel, .tasks-item, .tasks-toggle, .tasks-open-btn { transition: none; }
@@ -1009,5 +1006,38 @@ body.theme-dark .workspace .page-bar { background: color-mix(in srgb, var(--colo
   .tasks-drawer .tasks-new:hover,
   .tasks-drawer .tasks-new:active,
   .tasks-drawer .tasks-item:hover { transform: none; }
+}
+
+/* ---------- Matéria vinculada à página ---------- */
+.doc-subject-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  margin: 2px 0 14px; padding: 0 12px; min-height: 28px;
+  border: 1px solid var(--color-border); border-radius: 999px;
+  background: transparent;
+  font-size: 0.8rem; font-weight: 500; line-height: 1; color: var(--color-foreground);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.doc-subject-chip:hover { background: rgba(5,150,105,0.06); border-color: var(--color-primary); }
+.doc-subject-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+/* O .dot global (academics.css) define display e anularia o hidden. */
+.doc-subject-chip .dot[hidden] { display: none; }
+.doc-subject-chip.is-empty { color: var(--color-text-soft); border-style: dashed; }
+.doc-subject-chip.is-static { cursor: default; }
+.doc-subject-chip.is-static:hover { background: transparent; border-color: var(--color-border); }
+
+.subject-menu .subject-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.subject-menu .block-menu-item.is-sel { background-color: rgba(5,150,105,0.08); }
+.subject-menu .block-menu-item.is-sel .bm-tx { font-weight: 600; }
+.subject-menu-empty { margin: 0; padding: 8px 10px; font-size: 0.8rem; color: var(--color-text-soft); }
+
+/* ---------- Rename inline na árvore ---------- */
+.tree-rename-input {
+  flex: 1; min-width: 0;
+  font: inherit; font-size: 0.85rem;
+  padding: 2px 6px;
+  border: 1.5px solid var(--color-primary); border-radius: 6px;
+  background: var(--color-surface); color: inherit;
+  outline: none;
 }
 

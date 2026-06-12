@@ -11,7 +11,7 @@ from SmartLearning.http import parse_json_body
 from .models import PomodoroSession
 
 
-def _stats(user):
+def _today_stats(user):
     today = timezone.localdate()
     agg = PomodoroSession.objects.filter(
         user=user, completed=True, mode=PomodoroSession.Mode.WORK,
@@ -25,12 +25,16 @@ def _stats(user):
 
 @login_required
 @require_http_methods(["POST"])
-def api_log_session(request):
-    """Record a completed pomodoro interval."""
+def api_session_log(request):
+    """Registra um intervalo de pomodoro concluído."""
     data = parse_json_body(request)
     page = None
     if data.get("page"):
-        page = get_object_or_404(Page, id=data["page"], owner=request.user)
+        try:
+            page_id = int(data["page"])
+        except (TypeError, ValueError):
+            return JsonResponse({"error": "Pagina invalida."}, status=400)
+        page = get_object_or_404(Page, id=page_id, owner=request.user)
     try:
         minutes = int(data.get("minutes", 25))
     except (TypeError, ValueError):
@@ -40,19 +44,22 @@ def api_log_session(request):
     mode = data.get("mode", PomodoroSession.Mode.WORK)
     if mode not in PomodoroSession.Mode.values:
         return JsonResponse({"error": "Modo invalido."}, status=400)
+    label = data.get("label", "")
+    if not isinstance(label, str):
+        label = str(label)
     PomodoroSession.objects.create(
         user=request.user,
         page=page,
         mode=mode,
-        label=data.get("label", "")[:200],
+        label=label[:200],
         minutes=minutes,
         completed=True,
         ended_at=timezone.now(),
     )
-    return JsonResponse(_stats(request.user), status=201)
+    return JsonResponse(_today_stats(request.user), status=201)
 
 
 @login_required
 @require_http_methods(["GET"])
-def api_stats(request):
-    return JsonResponse(_stats(request.user))
+def api_session_stats(request):
+    return JsonResponse(_today_stats(request.user))

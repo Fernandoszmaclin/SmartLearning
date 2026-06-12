@@ -3,9 +3,8 @@ from django.views.generic import RedirectView
 
 from . import views
 
-# Caminhos padronizados em dois grupos claros: "anotacoes/" (trabalho/prova) e
-# "materias/". Verbos sempre em português (nova/editar/apagar/concluir) e listas
-# no plural. Os name= são mantidos, então templates e JS continuam válidos.
+# Dois grupos: "anotacoes/" (trabalho/prova) e "materias/". Verbos em português;
+# os name= são mantidos, então templates e JS continuam válidos.
 urlpatterns = [
     path('', RedirectView.as_view(pattern_name='workspace', permanent=False)),
 

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}{% if current %}{{ current.display_title }} · {% endif %}Workspace - SmartLearning{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/pages/academics.css' %}?v=2"><link rel="stylesheet" href="{% static 'css/pages/workspace.css' %}?v=2">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/pages/academics.css' %}?v=2"><link rel="stylesheet" href="{% static 'css/pages/workspace.css' %}?v=7">{% endblock %}
 {% block body_class %}flush{% endblock %}
 
 {% block app %}
@@ -56,6 +56,7 @@
   <!-- ============ EDITOR ============ -->
   <main class="editor-pane" id="editor-pane"
         data-page-id="{{ current.id|default:'' }}"
+        data-subject-id="{{ current.subject_id|default:'' }}"
         data-api-pages="{% url 'api_page_create' %}">
     {% if current %}
       <header class="page-bar">
@@ -134,6 +135,23 @@
               data-placeholder="Sem título">{{ current.title }}</h1>
         </div>
 
+        {% if request.GET.readonly %}
+          {% if current.subject %}
+            <span class="doc-subject-chip is-static">
+              <span class="dot" style="background: {{ current.subject.color }};"></span>
+              {{ current.subject.name }}
+            </span>
+          {% endif %}
+        {% else %}
+          <button class="doc-subject-chip{% if not current.subject %} is-empty{% endif %}" type="button"
+                  id="page-subject-chip" title="Vincular esta página a uma matéria"
+                  aria-haspopup="menu" aria-expanded="false">
+            <span class="dot" id="page-subject-dot"
+                  {% if current.subject %}style="background: {{ current.subject.color }};"{% else %}hidden{% endif %}></span>
+            <span id="page-subject-name">{% if current.subject %}{{ current.subject.name }}{% else %}Vincular matéria{% endif %}</span>
+          </button>
+        {% endif %}
+
         <div class="blocks" id="blocks">
           {% for b in blocks %}
             <div class="block" data-id="{{ b.id }}" data-kind="{{ b.kind }}">
@@ -178,6 +196,7 @@
         </button>
         {% endif %}
       </div>
+      {{ ws_subjects|json_script:"ws-subjects" }}
     {% else %}
       <div class="doc empty">
         <div class="empty-state">
@@ -214,6 +233,10 @@
     Nova pasta
   </button>
   <div id="ctx-divider" style="height: 1px; background: var(--color-border); margin: 4px 0; display: none;"></div>
+  <button type="button" class="ctx-item" id="ctx-rename-page" style="display: none;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Renomear
+  </button>
   <button type="button" class="ctx-item" id="ctx-delete-page" style="color: var(--color-destructive); display: none;">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
     Apagar
@@ -223,5 +246,5 @@
 {% include "notes/_tasks_drawer.html" %}
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'js/pages/workspace.js' %}?v=15"></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/workspace.js' %}?v=21"></script>{% endblock %}
 

@@ -102,20 +102,20 @@
     const timerEl = document.querySelector('.scrolly-screen[data-screen="2"] .sc-timer b');
     let countRAF = null;
 
-    const fmt = (totalSec) => {
+    const formatClock = (totalSec) => {
       const m = Math.floor(totalSec / 60);
       const s = Math.floor(totalSec % 60);
       return `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
     };
 
-    const countTo = (target, dur) => {
+    const animateCount = (target, dur) => {
       if (!timerEl) return;
       if (countRAF) {
         cancelAnimationFrame(countRAF);
         countRAF = null;
       }
       if (reduced) {
-        timerEl.textContent = fmt(target);
+        timerEl.textContent = formatClock(target);
         return;
       }
       let start = null;
@@ -123,7 +123,7 @@
         if (start === null) start = ts;
         const p = Math.min((ts - start) / dur, 1);
         const eased = 1 - Math.pow(1 - p, 3);
-        timerEl.textContent = fmt(target * eased);
+        timerEl.textContent = formatClock(target * eased);
         countRAF = p < 1 ? requestAnimationFrame(tick) : null;
       };
       countRAF = requestAnimationFrame(tick);
@@ -135,7 +135,7 @@
       current = i;
       steps.forEach((s, j) => s.classList.toggle("is-active", j === i));
       screens.forEach((s, j) => s.classList.toggle("is-active", j === i));
-      if (i === 2) countTo(1500, 1200);
+      if (i === 2) animateCount(1500, 1200);
     };
 
     if (!("IntersectionObserver" in window)) {

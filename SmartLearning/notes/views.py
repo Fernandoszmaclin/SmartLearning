@@ -2,7 +2,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import F, Max, Prefetch
+from django.db.models import Count, F, Max, Prefetch, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -20,6 +20,12 @@ from .models import Block, Page
 
 # ---------- auxiliares ----------
 
+def _subject_payload(subject):
+    if subject is None:
+        return None
+    return {"id": subject.id, "name": subject.name, "color": subject.color}
+
+
 def _page_payload(page):
     return {
         "id": page.id,
@@ -28,6 +34,7 @@ def _page_payload(page):
         "is_favorite": page.is_favorite,
         "is_folder": page.is_folder,
         "parent": page.parent_id,
+        "subject": _subject_payload(page.subject),
     }
 
 
@@ -47,17 +54,57 @@ def _user_page(request, page_id):
     return get_object_or_404(Page, id=page_id, owner=request.user)
 
 
-def _valid_kind(value):
-    """Devolve um Block.Kind válido ou None (descarta valores fora das choices)."""
+def _valid_block_kind(value):
+    """Devolve um Block.Kind válido ou None."""
     return value if value in Block.Kind.values else None
 
 
-def _to_position(value):
-    """Converte um valor para posição (inteiro >= 0); None se inválido."""
+def _parse_position(value):
+    """Converte para posição (int >= 0); None se inválido."""
     try:
         return max(0, int(value))
     except (TypeError, ValueError):
         return None
+
+
+def _breadcrumb_trail(page):
+    """Ancestrais da página, da raiz até ela (estilo Notion)."""
+    trail, node, seen = [], page, set()
+    while node is not None and node.id not in seen:
+        seen.add(node.id)
+        trail.append(node)
+        node = node.parent
+    trail.reverse()
+    return trail
+
+
+def _focus_today(user):
+    """Sessões e minutos de foco concluídos hoje (Pomodoro)."""
+    from pomodoro.models import PomodoroSession
+
+    return PomodoroSession.objects.filter(
+        user=user,
+        completed=True,
+        mode=PomodoroSession.Mode.WORK,
+        ended_at__date=timezone.localdate(),
+    ).aggregate(sessions=Count("id"), minutes=Sum("minutes"))
+
+
+def _parent_error(page, new_parent):
+    """Valida o novo pai; devolve a mensagem de erro ou None.
+
+    Só pastas abrigam páginas; proibido mover para si mesma ou descendente.
+    """
+    if new_parent is None:
+        return None
+    if not new_parent.is_folder:
+        return "Somente pastas podem abrigar outras páginas/pastas."
+    anc = new_parent
+    while anc is not None:
+        if anc.id == page.id:
+            return "Não dá para mover uma página para dentro dela mesma."
+        anc = anc.parent
+    return None
 
 
 # ---------- estrutura do workspace ----------
@@ -82,13 +129,7 @@ def workspace(request, page_id=None):
         if current.is_folder:
             return redirect("workspace")
         blocks = list(current.blocks.all())
-        # Trilha de ancestrais (raiz → página atual), estilo Notion.
-        node, seen = current, set()
-        while node is not None and node.id not in seen:
-            seen.add(node.id)
-            trail.append(node)
-            node = node.parent
-        trail.reverse()
+        trail = _breadcrumb_trail(current)
     else:
         first = Page.objects.filter(owner=request.user, is_folder=False).first()
         if first:
@@ -98,21 +139,11 @@ def workspace(request, page_id=None):
                 url = f"{url}?{urlencode(params)}"
             return redirect(url)
 
-    from pomodoro.models import PomodoroSession
-
     today = timezone.localdate()
-    todays = PomodoroSession.objects.filter(
-        user=request.user,
-        completed=True,
-        mode=PomodoroSession.Mode.WORK,
-        ended_at__date=today,
-    )
-    focus_minutes = sum(s.minutes for s in todays)
+    focus = _focus_today(request.user)
 
-    # ----- Gaveta "Anotações" (trabalhos e provas) integrada -----
-    # Estudos = páginas do workspace (árvore ao lado). A gaveta cuida só de
-    # trabalho/prova. Mandamos as anotações de uma vez e o JS filtra por
-    # tipo/matéria/terminadas — troca de aba instantânea, sem recarregar o editor.
+    # Gaveta "Anotações" (só trabalho/prova): manda tudo de uma vez e o JS
+    # filtra — troca de aba sem recarregar o editor.
     from academics.models import Note, Subject
 
     ac_subjects = Subject.objects.filter(owner=request.user)
@@ -121,7 +152,7 @@ def workspace(request, page_id=None):
         .select_related("subject", "workspace_page")
         .order_by("-created_at")
     )
-    # Quantos trabalhos/provas seguem pendentes → badge no botão "Anotações".
+    # Pendentes (trabalho/prova) → badge no botão "Anotações".
     task_pending_count = Note.objects.filter(
         owner=request.user,
         category__in=[Note.Category.TRABALHO, Note.Category.PROVA],
@@ -137,12 +168,14 @@ def workspace(request, page_id=None):
         "trail": trail,
         "blocks": blocks,
         "block_kinds": Block.Kind.choices,
-        "focus_sessions_today": todays.count(),
-        "focus_minutes_today": focus_minutes,
+        "focus_sessions_today": focus["sessions"],
+        "focus_minutes_today": focus["minutes"] or 0,
         "pomodoro_page_id": current.id if current else "",
         "pomodoro_open": False,
         # Gaveta de anotações (trabalho/prova)
         "ac_subjects": ac_subjects,
+        # Matérias para o picker de vínculo da página (JSON via json_script).
+        "ws_subjects": [_subject_payload(s) for s in ac_subjects],
         "ac_notes": ac_notes,
         "task_pending_count": task_pending_count,
         "current_note": current_note,
@@ -178,31 +211,15 @@ def api_page_create(request):
 @login_required
 @require_http_methods(["POST"])
 def api_page_move(request, page_id):
-    """Move/reordena uma página: define o pai (pasta) e a ordem entre irmãos.
-
-    body: {"parent": <id|null>, "order": [ids...]}  (order opcional)
-    """
+    """Move/reordena uma página. body: {"parent": <id|null>, "order": [ids...]}."""
     page = _user_page(request, page_id)
     data = parse_json_body(request)
 
     parent_id = data.get("parent")
     new_parent = _user_page(request, parent_id) if parent_id else None
 
-    if new_parent and not new_parent.is_folder:
-        return JsonResponse(
-            {"error": "Somente pastas podem abrigar outras páginas/pastas."},
-            status=400,
-        )
-
-    # Impede mover uma página para dentro dela mesma ou de uma descendente.
-    anc = new_parent
-    while anc is not None:
-        if anc.id == page.id:
-            return JsonResponse(
-                {"error": "Não dá para mover uma página para dentro dela mesma."},
-                status=400,
-            )
-        anc = anc.parent
+    if error := _parent_error(page, new_parent):
+        return JsonResponse({"error": error}, status=400)
 
     page.parent = new_parent
     order = data.get("order") or []
@@ -239,8 +256,21 @@ def api_page_detail(request, page_id):
         page.icon = data["icon"][:8]
     if "is_favorite" in data:
         page.is_favorite = bool(data["is_favorite"])
+    if "subject" in data:
+        subject = None
+        if data["subject"]:
+            from academics.models import Subject
+
+            try:
+                subject = Subject.objects.get(id=data["subject"], owner=request.user)
+            except (Subject.DoesNotExist, TypeError, ValueError):
+                return JsonResponse({"error": "Matéria inválida."}, status=400)
+        page.subject = subject
     if "parent" in data:
-        page.parent = _user_page(request, data["parent"]) if data["parent"] else None
+        new_parent = _user_page(request, data["parent"]) if data["parent"] else None
+        if error := _parent_error(page, new_parent):
+            return JsonResponse({"error": error}, status=400)
+        page.parent = new_parent
     page.save()
     return JsonResponse(_page_payload(page))
 
@@ -252,18 +282,18 @@ def api_page_detail(request, page_id):
 def api_block_create(request, page_id):
     page = _user_page(request, page_id)
     data = parse_json_body(request)
-    position = _to_position(data.get("position"))
+    position = _parse_position(data.get("position"))
     if position is None:
         nxt = page.blocks.aggregate(m=Max("position"))["m"]
         position = (nxt or 0) + 1
     else:
-        # abre espaço: empurra os blocos a partir desta posição uma casa adiante
+        # Abre espaço: desloca uma casa os blocos a partir desta posição.
         Block.objects.filter(page=page, position__gte=position).update(
             position=F("position") + 1
         )
     block = Block.objects.create(
         page=page,
-        kind=_valid_kind(data.get("kind")) or Block.Kind.PARAGRAPH,
+        kind=_valid_block_kind(data.get("kind")) or Block.Kind.PARAGRAPH,
         text=data.get("text", ""),
         position=position,
     )
@@ -304,11 +334,11 @@ def api_block_detail(request, block_id):
     data = parse_json_body(request)
     if "text" in data:
         block.text = data["text"]
-    if "kind" in data and _valid_kind(data["kind"]):
+    if "kind" in data and _valid_block_kind(data["kind"]):
         block.kind = data["kind"]
     if "checked" in data:
         block.checked = bool(data["checked"])
-    if "position" in data and (pos := _to_position(data["position"])) is not None:
+    if "position" in data and (pos := _parse_position(data["position"])) is not None:
         block.position = pos
     block.save()
     return JsonResponse(_block_payload(block))
@@ -356,7 +386,7 @@ def export_markdown(request, page_id):
 
 @login_required
 def export_backup(request):
-    """Exporta todos os dados da workspace (páginas e blocos) do usuário em JSON."""
+    """Exporta páginas e blocos do usuário em JSON."""
     pages = Page.objects.filter(owner=request.user).prefetch_related("blocks")
     data = []
     for p in pages:
@@ -381,6 +411,8 @@ def export_backup(request):
         data.append(page_data)
 
     response = HttpResponse(json.dumps(data, indent=2, ensure_ascii=False), content_type="application/json; charset=utf-8")
-    filename = f"workspace_backup_{timezone.now().strftime('%Y%m%d')}.json"
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response["Content-Disposition"] = content_disposition_header(
+        as_attachment=True,
+        filename=f"workspace_backup_{timezone.now().strftime('%Y%m%d')}.json",
+    )
     return response

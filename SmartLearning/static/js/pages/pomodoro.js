@@ -14,7 +14,8 @@
   
   const LOG_URL = root.dataset.logUrl || "/pomodoro/api/pomodoro/log/";
   const STATS_URL = root.dataset.statsUrl || "/pomodoro/api/pomodoro/stats/";
-  const pageId = root.dataset.pageId ? Number(root.dataset.pageId) : null;
+  // Lido a cada log: a navegação SPA do workspace atualiza este data-attr.
+  const currentPageId = () => (root.dataset.pageId ? Number(root.dataset.pageId) : null);
 
   const timeEl = document.getElementById("pomo-time");
   const modeEl = document.getElementById("pomo-mode");
@@ -84,7 +85,7 @@
   const tick = () => {
     remaining -= 1;
     if (remaining <= 0) {
-      complete();
+      completeInterval();
       return;
     }
     render();
@@ -125,7 +126,7 @@
     return MODE.WORK;
   };
 
-  const goTo = (newMode, autostart) => {
+  const switchMode = (newMode, autostart) => {
     mode = newMode;
     remaining = minutesFor(mode) * 60;
     pause();
@@ -133,7 +134,7 @@
     if (autostart) start();
   };
 
-  const skip = () => goTo(nextMode(), false);
+  const skip = () => switchMode(nextMode(), false);
 
   const logSession = async (minutes) => {
     try {
@@ -144,7 +145,7 @@
           minutes,
           mode: MODE.WORK,
           label: taskEl.value.trim(),
-          page: pageId,
+          page: currentPageId(),
         }),
       });
       if (res.ok) {
@@ -181,7 +182,7 @@
     } catch (e) { /* ignora */ }
   };
 
-  const complete = async () => {
+  const completeInterval = async () => {
     pause();
     const finished = mode;
     notify(finished);
@@ -189,7 +190,7 @@
     if (finished === MODE.WORK) {
       await logSession(minutesFor(MODE.WORK));
     }
-    goTo(nextMode(), true); // inicia o próximo intervalo automaticamente
+    switchMode(nextMode(), true); // já inicia o próximo intervalo
   };
 
   // ---- liga os controles ----
