@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 
@@ -55,11 +54,6 @@ WORKSPACE_FILE_CONTENT_TYPES = {
 }
 
 HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
-
-
-def _bool_env(name, default=False):
-    value = str(os.environ.get(name, default)).strip().lower()
-    return value in {"1", "true", "yes", "on"}
 
 
 def safe_redirect_url(request, value, fallback=None):
