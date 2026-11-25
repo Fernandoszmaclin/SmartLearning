@@ -1,21 +1,8 @@
-<h1 align="center">SmartLearning</h1>
+# SmartLearning
 
-<p align="center">
-  Ambiente unificado de estudos com workspace estilo Notion, timer Pomodoro integrado, gestão acadêmica e planejador semanal. Construído com Django e Vanilla JS/CSS, sem framework de frontend.
-</p>
+O SmartLearning começou com uma ideia simples. Quero abrir a matéria, ver quando é a próxima prova e continuar a anotação da última aula no mesmo lugar. Uma página do workspace pode ficar vinculada a uma matéria, e as sessões do Pomodoro ficam registradas na página que eu estava estudando.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Django-6.0-092E20?logo=django&logoColor=white" />
-  <img src="https://img.shields.io/badge/Python-3.13%20%7C%203.14-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?logo=javascript&logoColor=black" />
-  <img src="https://img.shields.io/badge/SQLite%20%7C%20PostgreSQL-ready-003B57?logo=sqlite&logoColor=white" />
-</p>
-
-## Sobre o projeto
-
-O SmartLearning nasceu da vontade de juntar toda a rotina acadêmica em um lugar só: editor de notas, controle de prazos, timer de foco e um panorama do progresso, sem precisar pular entre três apps diferentes.
-
-A ideia foi manter a stack enxuta. Django cuida do back-end e o front é feito em Vanilla JS/CSS, sem bundler nem biblioteca de componentes. Toda a parte interativa (navegação SPA, drag & drop, editor de blocos) foi construída em cima das APIs nativas do browser.
+O Django renderiza as páginas e atende as chamadas da interface. No workspace, o JavaScript troca o conteúdo ao navegar entre anotações e salva os blocos conforme são editados. A interface usa HTML, CSS e APIs do navegador, sem etapa de build no front-end.
 
 ## Demonstração da interface
 
@@ -23,50 +10,31 @@ Capturas da aplicação em execução, com dados fictícios para demonstração.
 
 ### Workspace e Pomodoro
 
-Páginas organizadas por matéria, editor de blocos e timer de foco integrado.
+Na captura, a página de Estruturas de Dados reúne notas e uma lista de exercícios. Os blocos podem ser reordenados por arraste. No Pomodoro, dá para ajustar a duração do foco e das pausas e conferir quantas sessões e minutos de foco foram registrados no dia.
 
 ![Workspace do SmartLearning com anotações sobre estruturas de dados, páginas na barra lateral e Pomodoro aberto](docs/screenshots/workspace.png)
 
 ### Minha área
 
-Resumo de estudos, provas e trabalhos, mapa de atividade e próximos prazos.
+Na Minha área, dá para ver o que vence na semana. O mapa de atividade mostra em quais dias foram registradas anotações de estudo.
 
 ![Painel Minha área com indicadores acadêmicos, mapa de atividade, tarefas da semana e matérias](docs/screenshots/dashboard.png)
 
 ### Planejador semanal
 
-Distribuição das tarefas de acordo com os prazos, a dificuldade e o tempo disponível por dia.
+Você informa quantos minutos tem por dia, e o planejador distribui provas e trabalhos pendentes pelos próximos sete dias. Ele prioriza o que está mais perto do prazo e tem maior dificuldade, usando a duração estimada para encaixar cada tarefa. Se uma tarefa não couber no tempo disponível, ela ainda pode entrar no dia menos ocupado até a data de vencimento.
 
 ![Plano semanal com tarefas distribuídas por dia e limite diário de 120 minutos](docs/screenshots/plano-semanal.png)
 
 ### Calendário acadêmico
 
-Visão mensal dos prazos, com identificação de trabalhos e provas.
+O calendário mostra os prazos do mês. Ao clicar em uma prova ou trabalho, dá para abrir a anotação correspondente.
 
 ![Calendário acadêmico de outubro com os prazos de trabalhos e provas](docs/screenshots/calendario.png)
 
-## Funcionalidades
+## Busca e exportação
 
-### Workspace (editor estilo Notion)
-
-- Editor de blocos com texto, listas, tarefas, código e arquivos; reordenação por arrastar e soltar com salvamento automático.
-- Páginas e pastas aninhadas, favoritos, emojis e vínculo com matérias; navegação sem recarregar.
-- Exportação de páginas em Markdown e de textos e estrutura dos blocos em JSON.
-
-### Hub Acadêmico
-
-- Gestão de matérias e de trabalhos e provas por matéria, com professor, prazo, dificuldade, tempo estimado e status.
-- Calendário de prazos e planejamento semanal automático por urgência, dificuldade e disponibilidade diária.
-- Dashboard com resumo acadêmico e mapa de atividade dos estudos.
-
-### Pomodoro
-
-- Foco e pausas curtas ou longas com duração configurável.
-- Sessões vinculadas à página em estudo, com total diário de sessões e minutos de foco.
-
-### Busca global
-
-- Pesquisa em páginas, blocos, anotações e matérias, com trechos destacados e resposta JSON para integrações (`?format=json`).
+A busca global encontra termos em páginas, blocos, anotações e matérias. Os resultados mostram o trecho onde o termo aparece e também podem ser consultados em JSON com `?format=json`. Dá para exportar uma página em Markdown ou baixar em JSON os textos e a estrutura dos blocos.
 
 ## Stack técnica
 
